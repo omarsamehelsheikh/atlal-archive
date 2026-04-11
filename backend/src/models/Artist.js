@@ -1,0 +1,43 @@
+const mongoose = require('mongoose');
+
+const artistSchema = new mongoose.Schema({
+  Artist_ID: { type: String, required: true, unique: true },
+  Full_Name: { type: String, required: true },
+  Full_Name_In_Arabic: String,
+  Student_Responsible: String,
+  Full_Name_In_Arabic_In_Tashkeel: String,
+  Age: String,
+  Diasporic_Vector: String,
+  Gender: String,
+  Date_Of_Birth: String,
+  Birth_Year: String,
+  Decease_Date: String,
+  Nationality: String,
+  Nationality_In_Arabic: String,
+  Birth_Country: String,
+  Birth_Country_In_Arabic: String,
+  Birth_City: String,
+  Birth_City_In_Arabic: String,
+  Current_Country: String,
+  Current_Country_In_Arabic: String,
+  Current_City: String,
+  Current_City_In_Arabic: String,
+  Undergraduate_Degree: String,
+  Undergraduate_Degree_In_Arabic: String,
+  Postgraduate_Degree: String,
+  Postgraduate_Degree_In_Arabic: String,
+  Other_Certificates: String,
+  Fields: String,
+  Artistic_Practices: String,
+  Email: String,
+  Website: String,
+  Instagram: String,
+  Book_ID: String,
+  Bio_In_English: String,
+  Bio_In_Arabic: String,
+  Cloudinary_Image1: String,
+  Cloudinary_Image2: String,
+  Status: { type: String, default: 'Draft' }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Artist', artistSchema);
