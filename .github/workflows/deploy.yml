@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Update Node to v20 (Fixing the BSON/MongoDB warnings)
+            # 1. Update Node to v20
             if ! command -v node &> /dev/null || [ "$(node -v | cut -d'.' -f1)" != "v20" ]; then
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs nginx
@@ -53,29 +53,27 @@ jobs:
             pm2 start server.js --name "atlal-backend"
             pm2 save
 
-            # 3. Nginx Config Fix (Pixel-Perfect Routing)
+            # 3. Nginx Setup
             sudo mkdir -p /var/www/html
             sudo chown -R ${{ secrets.EC2_USERNAME }}:${{ secrets.EC2_USERNAME }} /var/www/html
             
-            # This block writes the Nginx config directly to the server
-            sudo bash -c "cat > /etc/nginx/sites-available/default <<EOF
-            server {
+            # Use a robust config writer
+            printf "server {
                 listen 80;
                 server_name _;
                 location / {
                     root /var/www/html;
                     index index.html;
-                    try_files \\\$uri \\\$uri/ /index.html;
+                    try_files \$uri \$uri/ /index.html;
                 }
                 location /api/ {
                     proxy_pass http://localhost:5000;
                     proxy_http_version 1.1;
-                    proxy_set_header Upgrade \\\$http_upgrade;
+                    proxy_set_header Upgrade \$http_upgrade;
                     proxy_set_header Connection 'upgrade';
-                    proxy_set_header Host \\\$host;
+                    proxy_set_header Host \$host;
                 }
-            }
-            EOF"
+            }" | sudo tee /etc/nginx/sites-available/default > /dev/null
 
             # 4. Move Frontend Files
             rm -rf /var/www/html/*
