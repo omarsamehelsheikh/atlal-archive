@@ -41,10 +41,16 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Install Node & Nginx if missing
-            if ! command -v npm &> /dev/null; then
+            # 1. Install Node v18 & Nginx if missing
+            if ! command -v node &> /dev/null || [ "$(node -v | cut -d'.' -f1)" != "v18" ]; then
               sudo apt-get update
-              sudo apt-get install -y nodejs npm nginx
+              sudo apt-get install -y ca-certificates curl gnupg
+              sudo mkdir -p /etc/apt/keyrings
+              curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+              echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+              sudo apt-get update
+              sudo apt-get install nodejs -y
+              sudo apt-get install -y nginx
             fi
             
             # 2. Install PM2 globally if missing
@@ -61,11 +67,12 @@ jobs:
             sudo mkdir -p /var/www/html
             sudo chown -R ${{ secrets.EC2_USERNAME }}:${{ secrets.EC2_USERNAME }} /var/www/html
             
-            # 5. Move Build Files
-            # Checking for 'dist' (Vite) or 'build' (CRA)
+            # 5. Move Build Files (Check dist for Vite, build for CRA)
             if [ -d "/home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist" ]; then
+              rm -rf /var/www/html/*
               cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist/* /var/www/html/
-            else
+            elif [ -d "/home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build" ]; then
+              rm -rf /var/www/html/*
               cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build/* /var/www/html/
             fi
             
