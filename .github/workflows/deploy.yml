@@ -1,4 +1,4 @@
-name: CI/CD Deployment
+name: Deploy Atlal Archive
 
 on:
   push:
@@ -8,87 +8,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      # --- BUILD FRONTEND ---
-      - name: Install Frontend Deps & Build
-        run: |
-          cd frontend
-          npm install --legacy-peer-deps 
-          npm run build
-
-      # --- DEPLOY TO EC2 ---
-      - name: Deploy to Server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "."
-          target: "/home/${{ secrets.EC2_USERNAME }}/atlal-project"
-
-      # --- RESTART SERVICES ---
-      - name: Restart Backend & Serve Frontend
+      - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Update Environment
-            if ! command -v node &> /dev/null || [ "$(node -v | cut -d'.' -f1)" != "v20" ]; then
-              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-              sudo apt-get install -y nodejs nginx
-            fi
-            if ! command -v pm2 &> /dev/null; then sudo npm install -g pm2; fi
+            # 1. Stop any host-level services clashing with Port 80
+            sudo systemctl stop nginx || true
+            sudo fuser -k 80/tcp || true 
 
-            # 2. Start Backend
-            cd /home/${{ secrets.EC2_USERNAME }}/atlal-project/backend
-            npm install
-            pm2 delete atlal-backend || true
-            pm2 start server.js --name "atlal-backend"
-            pm2 save
+            # 2. Navigate to project
+            cd ~/atlal-project
+            git pull origin main
 
-            # 3. Nginx Force-Fix
-            sudo mkdir -p /var/www/html
-            sudo chown -R ${{ secrets.EC2_USERNAME }}:${{ secrets.EC2_USERNAME }} /var/www/html
+            # 3. Docker "Nuclear" Rebuild
+            docker compose down --remove-orphans || true
+            docker rmi atlal-frontend atlal-backend || true
             
-            # Clean up old configs
-            sudo rm -f /etc/nginx/sites-enabled/default
-            sudo rm -f /etc/nginx/sites-enabled/atlal
-
-            # Write Config using localhost (Necessary for EC2)
-            printf "server {
-                listen 80;
-                server_name _;
-                root /var/www/html;
-                index index.html;
-
-                location / {
-                    try_files \$uri \$uri/ /index.html;
-                }
-
-                location /api/ {
-                    proxy_pass http://localhost:5000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade \$http_upgrade;
-                    proxy_set_header Connection 'upgrade';
-                    proxy_set_header Host \$host;
-                    proxy_cache_bypass \$http_upgrade;
-                }
-            }" | sudo tee /etc/nginx/sites-available/atlal > /dev/null
-
-            sudo ln -sf /etc/nginx/sites-available/atlal /etc/nginx/sites-enabled/atlal
-
-            # 4. Refresh Frontend Files (Using 'build' per your package.json)
-            rm -rf /var/www/html/*
-            cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build/* /var/www/html/
-            
-            # 5. Final Restart
-            sudo nginx -t && sudo systemctl restart nginx
+            docker compose up -d --build
+            docker image prune -f
