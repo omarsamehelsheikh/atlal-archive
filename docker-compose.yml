@@ -6,16 +6,15 @@ services:
     container_name: atlal-backend
     restart: always
     env_file:
-      - .env
+      - backend/.env
     ports:
-      - "5001:5000"
+      - "5050:5000"  # Mapping host 5050 to container 5000
 
   frontend:
     build: ./frontend
     container_name: atlal-frontend
     restart: always
-    # Giving the container a bit more overhead during build
-    mem_limit: 1024m 
+    # Removed mem_limit because we are just serving static files now
     ports:
       - "80:80"
     depends_on:
