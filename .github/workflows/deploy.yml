@@ -18,17 +18,15 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Stop any host-level services clashing with Port 80
+            # 1. Cleanup host port 80
             sudo systemctl stop nginx || true
             sudo fuser -k 80/tcp || true 
 
-            # 2. Navigate to project
+            # 2. Sync code
             cd ~/atlal-project
             git pull origin main
 
-            # 3. Docker "Nuclear" Rebuild
-            docker compose down --remove-orphans || true
-            docker rmi atlal-frontend atlal-backend || true
-            
-            docker compose up -d --build
-            docker image prune -f
+            # 3. Docker Rebuild (No more OOM errors!)
+            sudo docker-compose down
+            sudo docker-compose up -d --build
+            sudo docker image prune -f
