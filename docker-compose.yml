@@ -3,6 +3,7 @@ version: '3.8'
 services:
   backend:
     build: ./backend
+    container_name: atlal-backend
     restart: always
     env_file:
       - .env
@@ -11,6 +12,7 @@ services:
 
   frontend:
     build: ./frontend
+    container_name: atlal-frontend
     restart: always
     ports:
       - "80:80"
