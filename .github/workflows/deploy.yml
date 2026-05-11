@@ -38,44 +38,53 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Update Node to v20
+            # 1. Ensure Environment is Clean
             if ! command -v node &> /dev/null || [ "$(node -v | cut -d'.' -f1)" != "v20" ]; then
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs nginx
             fi
-            
             if ! command -v pm2 &> /dev/null; then sudo npm install -g pm2; fi
 
-            # 2. Backend Startup
+            # 2. Start Backend
             cd /home/${{ secrets.EC2_USERNAME }}/atlal-project/backend
             npm install
             pm2 delete atlal-backend || true
             pm2 start server.js --name "atlal-backend"
             pm2 save
 
-            # 3. Nginx Setup
+            # 3. Nginx "Force-Fix"
             sudo mkdir -p /var/www/html
             sudo chown -R ${{ secrets.EC2_USERNAME }}:${{ secrets.EC2_USERNAME }} /var/www/html
             
-            # Use a robust config writer
+            # Wipe any conflicting default configs
+            sudo rm -f /etc/nginx/sites-enabled/default
+            
+            # Write the new config
             printf "server {
-                listen 80;
+                listen 80 default_server;
+                listen [::]:80 default_server;
                 server_name _;
+                root /var/www/html;
+                index index.html;
+
                 location / {
-                    root /var/www/html;
-                    index index.html;
                     try_files \$uri \$uri/ /index.html;
                 }
+
                 location /api/ {
                     proxy_pass http://localhost:5000;
                     proxy_http_version 1.1;
                     proxy_set_header Upgrade \$http_upgrade;
                     proxy_set_header Connection 'upgrade';
                     proxy_set_header Host \$host;
+                    proxy_cache_bypass \$http_upgrade;
                 }
-            }" | sudo tee /etc/nginx/sites-available/default > /dev/null
+            }" | sudo tee /etc/nginx/sites-available/atlal > /dev/null
 
-            # 4. Move Frontend Files
+            # Link the config to enabled sites
+            sudo ln -sf /etc/nginx/sites-available/atlal /etc/nginx/sites-enabled/atlal
+
+            # 4. Refresh Frontend Files
             rm -rf /var/www/html/*
             if [ -d "/home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist" ]; then
               cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist/* /var/www/html/
@@ -83,5 +92,5 @@ jobs:
               cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build/* /var/www/html/
             fi
             
-            # 5. Final Restart
-            sudo systemctl restart nginx
+            # 5. Check syntax before restart to prevent "silent" crashes
+            sudo nginx -t && sudo systemctl restart nginx
