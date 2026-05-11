@@ -20,7 +20,6 @@ jobs:
       - name: Install Frontend Deps & Build
         run: |
           cd frontend
-          # Added --legacy-peer-deps to fix the TypeScript conflict
           npm install --legacy-peer-deps 
           npm run build
 
@@ -42,11 +41,33 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # 1. Install Node & Nginx if missing
+            if ! command -v npm &> /dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y nodejs npm nginx
+            fi
+            
+            # 2. Install PM2 globally if missing
+            if ! command -v pm2 &> /dev/null; then
+              sudo npm install -g pm2
+            fi
+
+            # 3. Setup Backend
             cd /home/${{ secrets.EC2_USERNAME }}/atlal-project/backend
             npm install
             pm2 restart all || pm2 start index.js --name "atlal-backend"
             
-            # Update Nginx to serve the new Frontend build
-            # Note: Create /var/www/html if it doesn't exist or use sudo
-            sudo cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build/* /var/www/html/
-            sudo systemctl restart nginx
+            # 4. Setup Frontend Directory
+            sudo mkdir -p /var/www/html
+            sudo chown -R ${{ secrets.EC2_USERNAME }}:${{ secrets.EC2_USERNAME }} /var/www/html
+            
+            # 5. Move Build Files
+            # Checking for 'dist' (Vite) or 'build' (CRA)
+            if [ -d "/home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist" ]; then
+              cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist/* /var/www/html/
+            else
+              cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build/* /var/www/html/
+            fi
+            
+            # 6. Final Nginx Restart
+            sudo systemctl restart nginx || sudo service nginx restart
