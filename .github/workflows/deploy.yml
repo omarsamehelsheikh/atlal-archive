@@ -20,7 +20,8 @@ jobs:
       - name: Install Frontend Deps & Build
         run: |
           cd frontend
-          npm install
+          # Added --legacy-peer-deps to fix the TypeScript conflict
+          npm install --legacy-peer-deps 
           npm run build
 
       # --- DEPLOY TO EC2 ---
@@ -46,5 +47,6 @@ jobs:
             pm2 restart all || pm2 start index.js --name "atlal-backend"
             
             # Update Nginx to serve the new Frontend build
-            sudo cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist/* /var/www/html/
+            # Note: Create /var/www/html if it doesn't exist or use sudo
+            sudo cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build/* /var/www/html/
             sudo systemctl restart nginx
