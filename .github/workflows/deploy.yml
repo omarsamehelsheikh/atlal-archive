@@ -38,43 +38,52 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Environment Setup
-            if ! command -v node &> /dev/null || [ "$(node -v | cut -d'.' -f1)" != "v18" ]; then
-              sudo apt-get update && sudo apt-get install -y ca-certificates curl gnupg
-              sudo mkdir -p /etc/apt/keyrings
-              curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-              echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-              sudo apt-get update && sudo apt-get install nodejs nginx -y
+            # 1. Update Node to v20 (Fixing the BSON/MongoDB warnings)
+            if ! command -v node &> /dev/null || [ "$(node -v | cut -d'.' -f1)" != "v20" ]; then
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs nginx
             fi
             
             if ! command -v pm2 &> /dev/null; then sudo npm install -g pm2; fi
 
-            # 2. Smart Backend Start
+            # 2. Backend Startup
             cd /home/${{ secrets.EC2_USERNAME }}/atlal-project/backend
             npm install
-            
-            # Stop existing process to avoid "Script not found" conflicts
             pm2 delete atlal-backend || true
-            
-            # Detect entry point (checks index.js, then server.js, then app.js)
-            if [ -f "index.js" ]; then ENTRY="index.js"
-            elif [ -f "server.js" ]; then ENTRY="server.js"
-            elif [ -f "app.js" ]; then ENTRY="app.js"
-            else echo "ERROR: No entry point found!"; exit 1; fi
-            
-            pm2 start $ENTRY --name "atlal-backend"
+            pm2 start server.js --name "atlal-backend"
             pm2 save
 
-            # 3. Frontend Deployment
+            # 3. Nginx Config Fix (Pixel-Perfect Routing)
             sudo mkdir -p /var/www/html
             sudo chown -R ${{ secrets.EC2_USERNAME }}:${{ secrets.EC2_USERNAME }} /var/www/html
             
+            # This block writes the Nginx config directly to the server
+            sudo bash -c "cat > /etc/nginx/sites-available/default <<EOF
+            server {
+                listen 80;
+                server_name _;
+                location / {
+                    root /var/www/html;
+                    index index.html;
+                    try_files \\\$uri \\\$uri/ /index.html;
+                }
+                location /api/ {
+                    proxy_pass http://localhost:5000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade \\\$http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host \\\$host;
+                }
+            }
+            EOF"
+
+            # 4. Move Frontend Files
+            rm -rf /var/www/html/*
             if [ -d "/home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist" ]; then
-              rm -rf /var/www/html/*
               cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist/* /var/www/html/
             else
-              rm -rf /var/www/html/*
               cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/build/* /var/www/html/
             fi
             
+            # 5. Final Restart
             sudo systemctl restart nginx
