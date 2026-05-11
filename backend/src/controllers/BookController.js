@@ -10,9 +10,16 @@ class BookController {
     }
   }
 
+
   async getById(req, res) {
     try {
-      const data = await BookService.getBookById(req.params.id);
+      const { id } = req.params; // Captures "BOOK01" from the URL
+      const data = await BookService.getBookById(id);
+      
+      if (!data) {
+        return res.status(404).json({ success: false, message: "Book not found" });
+      }
+      
       res.status(200).json({ success: true, data });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });

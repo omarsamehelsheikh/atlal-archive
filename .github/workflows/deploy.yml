@@ -1,0 +1,50 @@
+name: CI/CD Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # --- BUILD FRONTEND ---
+      - name: Install Frontend Deps & Build
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      # --- DEPLOY TO EC2 ---
+      - name: Deploy to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "."
+          target: "/home/${{ secrets.EC2_USERNAME }}/atlal-project"
+
+      # --- RESTART SERVICES ---
+      - name: Restart Backend & Serve Frontend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.EC2_USERNAME }}/atlal-project/backend
+            npm install
+            pm2 restart all || pm2 start index.js --name "atlal-backend"
+            
+            # Update Nginx to serve the new Frontend build
+            sudo cp -r /home/${{ secrets.EC2_USERNAME }}/atlal-project/frontend/dist/* /var/www/html/
+            sudo systemctl restart nginx

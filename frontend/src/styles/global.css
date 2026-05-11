@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap');
+
+/* Base Reset & Typography */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  text-transform: uppercase;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #ffffff;
+  color: #000000;
+  overflow-x: hidden; /* Prevent horizontal scroll from staggered images */
+}
+
+.main-container {
+  padding-top: 80px; /* Space for the fixed Navbar */
+  min-height: 100vh;
+}
+
+/* Headers & Paragraphs */
+h1, h2 { 
+  font-weight: 900; 
+  letter-spacing: -2px; 
+}
+
+p { 
+  font-size: 0.9rem; 
+  line-height: 1.4; 
+  text-transform: none; /* Keep paragraphs readable (not uppercase) */
+}
+
+/* --- ARCHIVE CARD LOGIC (Matching your code) --- */
+
+/* The technical 0.25px border from your design */
+.artist-card-inner {
+  border: 0.25px solid black !important;
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Hover State: Shows the Black Name Card */
+.artist-card-inner:hover .hover-info {
+  opacity: 1 !important;
+}
+
+/* Lift effect on hover */
+.artist-card-inner:hover {
+  transform: translateY(-8px);
+  z-index: 50;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+/* Grayscale toggle for images */
+.artist-card-inner img {
+  filter: grayscale(100%);
+  transition: filter 0.3s ease;
+  display: block;
+}
+
+.artist-card-inner:hover img {
+  filter: grayscale(0%);
+}
+
+/* --- UI ELEMENTS --- */
+
+/* Fixed Header/Footer Safeguards */
+nav, footer {
+  z-index: 100;
+}
+
+/* Hide scrollbars but keep scrolling active for a clean "scan" look */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Selection color (matches the Cyan accent in Manifesto) */
+::selection {
+  background: #00D1FF;
+  color: white;
+}
