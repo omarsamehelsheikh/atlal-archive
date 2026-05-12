@@ -1,8 +1,15 @@
-# Use Nginx directly - NO NODE, NO BUILD
+# Stage 1: Build the React app
+FROM node:18-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve the app with Nginx
 FROM nginx:stable-alpine
-# Copy the build folder you already made on Windows
-COPY build /usr/share/nginx/html
-# Copy your config
+# This pulls the build from the Stage 1 above, NOT from your Windows folder
+COPY --from=build /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
