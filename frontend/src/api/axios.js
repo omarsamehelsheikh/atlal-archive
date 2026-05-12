@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  // This tells the browser: "Look for /api on the same domain I am currently on"
+  baseURL: '/api', 
 });
 
 export default API;

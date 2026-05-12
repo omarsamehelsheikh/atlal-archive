@@ -65,7 +65,7 @@ const ArtworkDetail: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get(`http://54.174.102.52:5000/api/artworks/${id}`)
+      .get(`/api/artworks/${id}`)
       .then(async (res) => {
         const artworkData = res.data.data;
 
@@ -78,7 +78,7 @@ const ArtworkDetail: React.FC = () => {
         setSelectedImage(artworkData.Cloudinary_Image1);
 
         const allArtworksRes = await axios.get(
-          "http://54.174.102.52:5000/api/artworks",
+          "/api/artworks",
         );
 
         const allArtworks = allArtworksRes.data.data || [];
@@ -187,7 +187,7 @@ const ArtworkDetail: React.FC = () => {
               onClick={async () => {
                 try {
                   const res = await axios.get(
-                    "http://54.174.102.52:5000/api/artists",
+                    "/api/artists",
                   );
 
                   const artists = res.data.data || [];

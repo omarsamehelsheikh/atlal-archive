@@ -830,13 +830,13 @@ const Search: React.FC = () => {
     try {
       const [artworkRes, artistRes, bookRes] = await Promise.all([
         axios
-          .get("http://54.174.102.52:5000/api/artworks")
+          .get("/api/artworks")
           .catch(() => ({ data: { data: [] } })),
         axios
-          .get("http://54.174.102.52:5000/api/artists")
+          .get("/api/artists")
           .catch(() => ({ data: { data: [] } })),
         axios
-          .get("http://54.174.102.52:5000/api/books")
+          .get("/api/books")
           .catch(() => ({ data: { data: [] } })),
       ]);
 
