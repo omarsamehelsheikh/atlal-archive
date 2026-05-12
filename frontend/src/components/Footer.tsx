@@ -1,124 +1,294 @@
-import React from 'react';
-import { useLanguage } from '../context/LanguageContext';
+import React from "react";
+import { useLanguage } from "../context/LanguageContext";
 
 const Footer: React.FC = () => {
   const { language } = useLanguage();
 
+  const isArabic =
+    language === "AR";
+
   return (
-    <footer style={styles.footerWrapper}>
-      <div style={styles.container}>
-        
-        {/* --- LOGO / CALLIGRAPHY --- */}
-        <div style={styles.logoGroup}>
-          <img 
-            style={styles.logoImg} 
-            src="/calligraphy_logo.png" 
-            alt="Atlal" 
-          />
-        </div>
+    <footer
+      style={{
+        width: "100%",
+        height: "146px",
 
-        {/* --- EMAIL SECTION (Real Icon + Text) --- */}
-        <div style={{
-          ...styles.emailGroup,
-          left: language === 'ENG' ? 100 : 'auto',
-          right: language === 'AR' ? 100 : 'auto',
-          flexDirection: language === 'ENG' ? 'row' : 'row-reverse'
-        }}>
-          {/* Real Mail Icon (SVG) */}
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-          </svg>
-          <span style={styles.emailText}>atlalcompendium@gmail.com</span>
-        </div>
+        background: isArabic
+          ? "#000"
+          : "#fff",
 
-        {/* --- INSTAGRAM SECTION (Real Official Icon) --- */}
-        <a 
-          href="https://instagram.com/atlalcompendium" // Update with your real link
-          target="_blank" 
-          rel="noopener noreferrer"
+        borderTop: isArabic
+          ? "1px solid #222"
+          : "1px solid #d9d9d9",
+
+        display: "flex",
+
+        justifyContent:
+          "center",
+
+        alignItems: "flex-end",
+
+        paddingBottom: "28px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+
+          width: "1180px",
+height: "58px",
+justifyContent: "center",
+alignItems: "flex-end",
+gap: "170px",
+
+          flexDirection:
+            isArabic
+              ? "row-reverse"
+              : "row",
+        }}
+      >
+        {/* LEFT */}
+        <div
           style={{
-            ...styles.socialLink,
-            left: language === 'ENG' ? 324 : 'auto',
-            right: language === 'AR' ? 324 : 'auto'
+            display: "flex",
+
+            flexDirection:
+              "column",
+
+            alignItems:
+              isArabic
+                ? "flex-end"
+                : "flex-start",
+
+            gap: "6px",
           }}
         >
-          {/* Official Instagram SVG Path */}
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-            <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-          </svg>
-        </a>
+          <div
+  style={{
+    color: isArabic
+      ? "#fff"
+      : "#000",
 
-        {/* --- ARCHIVE TAG --- */}
-        <div style={{
-           ...styles.archiveTag,
-           right: language === 'ENG' ? 50 : 'auto',
-           left: language === 'AR' ? 50 : 'auto'
-        }}>
-           © ATLAL {new Date().getFullYear()}
+    fontFamily:
+      "OT Neue Montreal",
+
+    fontSize: "10px",
+
+    fontWeight: 400,
+
+    letterSpacing:
+      "0.12em",
+
+    textTransform:
+      "uppercase",
+
+    opacity: 0.9,
+
+    whiteSpace: "nowrap",
+  }}
+>
+  © 2026 ATLAL COMPENDIUM
+</div>
+
+          <div
+            style={{
+              color: isArabic
+                ? "#fff"
+                : "#000",
+
+              fontFamily:
+                "OT Neue Montreal",
+
+              fontSize: "10px",
+
+              fontWeight: 400,
+
+              letterSpacing:
+                "0.12em",
+
+              textTransform:
+                "uppercase",
+
+              opacity: 0.55,
+            }}
+          >
+            ALL RIGHTS
+            RESERVED
+          </div>
+        </div>
+
+        {/* CENTER */}
+        <div
+          style={{
+            display: "flex",
+
+            flexDirection:
+              "column",
+
+            alignItems:
+              "center",
+
+            gap: "6px",
+          }}
+        >
+          <div
+            style={{
+              color: isArabic
+                ? "#fff"
+                : "#000",
+
+              fontFamily:
+                "OT Neue Montreal",
+
+              fontSize: "10px",
+
+              fontWeight: 400,
+
+              letterSpacing:
+                "0.12em",
+
+              textTransform:
+                "uppercase",
+
+              opacity: 0.55,
+            }}
+          >
+            MAIL:
+          </div>
+
+          <a
+            href="mailto:atlalcompendium@gmail.com"
+            style={{
+              color: isArabic
+                ? "#fff"
+                : "#000",
+
+              textDecoration:
+                "none",
+
+              fontFamily:
+                "OT Neue Montreal",
+
+              fontSize: "10px",
+
+              fontWeight: 400,
+
+              letterSpacing:
+                "0.12em",
+
+              textTransform:
+                "uppercase",
+
+              opacity: 0.9,
+            }}
+          >
+            ATLALCOMPENDIUM@GMAIL.COM
+          </a>
+        </div>
+
+        {/* INSTAGRAM */}
+        <div
+          style={{
+            display: "flex",
+
+            flexDirection:
+              "column",
+
+            alignItems:
+              "center",
+
+            gap: "6px",
+          }}
+        >
+          <div
+            style={{
+              color: isArabic
+                ? "#fff"
+                : "#000",
+
+              fontFamily:
+                "OT Neue Montreal",
+
+              fontSize: "10px",
+
+              fontWeight: 400,
+
+              letterSpacing:
+                "0.12em",
+
+              textTransform:
+                "uppercase",
+
+              opacity: 0.55,
+            }}
+          >
+            INSTAGRAM:
+          </div>
+
+          <a
+            href="https://instagram.com/atlalcompendium"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: isArabic
+                ? "#fff"
+                : "#000",
+
+              textDecoration:
+                "none",
+
+              fontFamily:
+                "OT Neue Montreal",
+
+              fontSize: "10px",
+
+              fontWeight: 400,
+
+              letterSpacing:
+                "0.12em",
+
+              textTransform:
+                "uppercase",
+
+              opacity: 0.9,
+            }}
+          >
+            @ATLALCOMPENDIUM
+          </a>
+        </div>
+
+        {/* RIGHT LOGO */}
+        <div
+          style={{
+            width: "180px",
+
+            display: "flex",
+
+            justifyContent:
+              "center",
+
+            alignItems:
+              "flex-end",
+          }}
+        >
+          <img
+            src="/calligraphy_logo.png"
+            alt="Atlal"
+            style={{
+              width: "100%",
+
+              objectFit:
+                "contain",
+
+              filter: isArabic
+                ? "invert(1)"
+                : "none",
+            }}
+          />
         </div>
       </div>
     </footer>
   );
-};
-
-const styles: Record<string, React.CSSProperties> = {
-  footerWrapper: {
-    width: '100%',
-    height: '146px',
-    background: 'white',
-    position: 'relative',
-    borderTop: '1px solid #eee',
-    marginTop: 'auto'
-  },
-  container: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-    maxWidth: '1440px',
-    margin: '0 auto'
-  },
-  logoGroup: {
-    width: '131.67px',
-    height: '41.98px',
-    left: '100px',
-    top: '20px',
-    position: 'absolute'
-  },
-  logoImg: { width: '100%', height: '100%', objectFit: 'contain' },
-  emailGroup: {
-    top: '80px',
-    position: 'absolute',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px'
-  },
-  emailText: {
-    color: 'black',
-    fontSize: '11px',
-    fontFamily: 'Inter',
-    fontWeight: '500',
-    letterSpacing: '0.55px'
-  },
-  socialLink: {
-    width: '32px',
-    height: '32px',
-    top: '75px',
-    position: 'absolute',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'opacity 0.2s'
-  },
-  archiveTag: {
-    position: 'absolute',
-    top: '86px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-    fontFamily: 'Inter',
-    letterSpacing: '1px'
-  }
 };
 
 export default Footer;
