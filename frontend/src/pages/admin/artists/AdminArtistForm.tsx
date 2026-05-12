@@ -9,8 +9,8 @@ const FormField = ({ label, value, onChange, placeholder = "", dir = "ltr", disa
     <label className="text-[9px] font-black uppercase text-gray-500 ml-1">{label}</label>
     <input 
       value={value || ''} 
-      onChange={(e) => onChange(e.target.value)}
-      dir={dir}
+      onChange={(e) => onChange(e.target.value)} 
+      dir={dir} 
       disabled={disabled}
       className={`w-full bg-white/5 border border-white/10 p-3 rounded-xl text-xs text-white outline-none focus:border-primary transition-all font-bold ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
       placeholder={placeholder}
@@ -23,8 +23,8 @@ const TextAreaField = ({ label, value, onChange, dir = "ltr" }: any) => (
     <label className="text-[9px] font-black uppercase text-gray-500 ml-1">{label}</label>
     <textarea 
       value={value || ''} 
-      onChange={(e) => onChange(e.target.value)}
-      dir={dir}
+      onChange={(e) => onChange(e.target.value)} 
+      dir={dir} 
       className="w-full bg-white/5 border border-white/10 p-4 rounded-xl text-xs h-32 text-white outline-none focus:border-primary transition-all font-bold"
     />
   </div>
@@ -37,7 +37,7 @@ export const AdminArtistForm = () => {
   const [file, setFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState('identity');
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     Artist_ID: '',
     Full_Name: '',
     Full_Name_In_Arabic: '',
@@ -65,6 +65,8 @@ export const AdminArtistForm = () => {
     Email: '',
     Website: '',
     Instagram: '',
+    // UPDATED: Added field to state
+    Included_In_Books: '', 
     Status: 'Complete'
   });
 
@@ -73,21 +75,34 @@ export const AdminArtistForm = () => {
       AdminService.getArtistById(id).then((res: any) => {
         const artistData = res.data?.data; 
         if (artistData) {
-          setFormData(artistData);
+          // UPDATED: Convert array to comma separated string for the form field
+          setFormData({
+            ...artistData,
+            Included_In_Books: Array.isArray(artistData.Included_In_Books) 
+              ? artistData.Included_In_Books.join(', ') 
+              : ''
+          });
         }
       }).catch(() => toast.error("Record not found"));
     }
   }, [id]);
 
   const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // UPDATED: Convert comma separated string back to array before saving
+    const finalData = {
+      ...formData,
+      Included_In_Books: formData.Included_In_Books.split(',').map((v: string) => v.trim()).filter((v: string) => v !== "")
+    };
+
     try {
-      await AdminService.upsertArtist(formData);
+      await AdminService.upsertArtist(finalData);
       toast.success(id ? "Archive Updated" : "Artist Created");
       navigate('/admin/artists');
     } catch (err) {
@@ -145,6 +160,8 @@ export const AdminArtistForm = () => {
                   <FormField label="Gender" value={formData.Gender} onChange={(v: string) => updateField('Gender', v)} />
                   <FormField label="Age" value={formData.Age} onChange={(v: string) => updateField('Age', v)} />
                   <FormField label="Email" value={formData.Email} onChange={(v: string) => updateField('Email', v)} />
+                  {/* UPDATED: Added Associated Books Field here */}
+                  <FormField label="Included In Books (IDs)" value={formData.Included_In_Books} onChange={(v: string) => updateField('Included_In_Books', v)} placeholder="BOOK01, BOOK02" />
                   <FormField label="Instagram" value={formData.Instagram} onChange={(v: string) => updateField('Instagram', v)} />
                   <FormField label="Website" value={formData.Website} onChange={(v: string) => updateField('Website', v)} />
                 </div>

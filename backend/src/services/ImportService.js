@@ -5,12 +5,13 @@ const BookRepo = require('../repositories/BookRepo');
 const SectionRepo = require('../repositories/SectionRepo');
 const SeriesRepo = require('../repositories/SeriesRepo');
 const { ThemeRepo, TagRepo } = require('../repositories/TaxonomyRepo');
+const mongoose = require('mongoose'); // Added to support model access inside switch
 
 // ---------------------------------------------------------------------------
 // HELPER: Extract a Google-Sheets IFERROR formula's cached string value.
 //
 // When the workbook is exported from Google Sheets, translated cells look like:
-//   =IFERROR(__xludf.DUMMYFUNCTION("GOOGLETRANSLATE(...)"), "النص العربي")
+//   =IFERROR(__xludf.DUMMYFUNCTION("GOOGLETRANSLATE(...)"), "النص العربي")
 //
 // xlsx.read() returns the raw formula string instead of the computed value.
 // This helper pulls out the last quoted argument — the cached Arabic (or any)
@@ -277,7 +278,24 @@ class ImportService {
       try {
         switch (type) {
           case 'artist':  await ArtistRepo.upsert(row);                                               break;
-          case 'artwork': await ArtworkRepo.artworkUpsert(row);                                       break;
+          case 'artwork': 
+            // --- UPDATED SCRIPT LOGIC FOR MULTIPLE CLOUDINARY LINKS ---
+            const existingArtwork = await mongoose.model('Artwork').findOne({ Artwork_ID: row.Artwork_ID });
+            if (existingArtwork) {
+              // If it exists, we just add the new URL to the array
+              if (row.Cloudinary_Image_URL) {
+                await mongoose.model('Artwork').updateOne(
+                  { Artwork_ID: row.Artwork_ID },
+                  { $addToSet: { Cloudinary_Image_URLs: row.Cloudinary_Image_URL } }
+                );
+              }
+            } else {
+              // If new, initialize the array with the URL from the row
+              row.Cloudinary_Image_URLs = row.Cloudinary_Image_URL ? [row.Cloudinary_Image_URL] : [];
+              delete row.Cloudinary_Image_URL; // Remove the single string field mapping
+              await ArtworkRepo.artworkUpsert(row);
+            }
+            break;
           case 'book':    await BookRepo.upsert(row);                                                 break;
           case 'series':  await SeriesRepo.upsert(row);                                               break;
           case 'section': await SectionRepo.upsert(row);                                              break;

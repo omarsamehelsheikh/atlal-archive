@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Edition Numerical Unlicensed";
+  src: url("../public/Font/EditionNumericalUnlicensed-30.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Edition Numerical Unlicensed1";
+  src: url("../public/Font/EditionNumericalUnlicensed-50.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Edition Numerical Unlicensed2";
+  src: url("../public/Font/EditionNumericalUnlicensed-70.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
 /* Your other custom styles below */
 body {
   margin: 0;
@@ -10,4 +30,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+* {
+  -webkit-font-smoothing: none !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: geometricPrecision !important;
 }

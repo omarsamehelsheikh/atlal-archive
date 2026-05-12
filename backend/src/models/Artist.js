@@ -33,6 +33,8 @@ const artistSchema = new mongoose.Schema({
   Website: String,
   Instagram: String,
   Book_ID: String,
+  // NEW FIELD: Array of Book IDs this artist is included in
+  Included_In_Books: [String], 
   Bio_In_English: String,
   Bio_In_Arabic: String,
   Cloudinary_Image1: String,

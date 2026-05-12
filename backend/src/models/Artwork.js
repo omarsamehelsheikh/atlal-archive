@@ -21,7 +21,7 @@ const artworkSchema = new mongoose.Schema({
   Film_Image_Resolution: String,
   Film_Image_URL: String,
   Film_Image_Source: String,
-  Cloudinary_Image_URL: String, 
+  Cloudinary_Image_URLs: [String],
   Section_ID: String,
   Section_Title: String,
   Book_ID: String,

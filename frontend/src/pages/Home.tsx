@@ -1,172 +1,962 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import ForceGraph3D, { ForceGraphMethods } from 'react-force-graph-3d';
-import axios from 'axios';
-import * as THREE from 'three';
-import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { useLanguage } from '../context/LanguageContext';
+import React, { useState, useEffect, useMemo } from "react";
+import axios from "axios";
+import Navbar from "../components/Navbar";
+import { useLanguage } from "../context/LanguageContext";
 
-const textureCache: { [key: string]: THREE.Texture } = {};
-const loader = new THREE.TextureLoader();
+type SortOption = "random" | "alphabetical";
 
 const Home: React.FC = () => {
   const { language } = useLanguage();
+
+  const isArabic = language === "AR";
+
   const [artists, setArtists] = useState<any[]>([]);
   const [selectedArtist, setSelectedArtist] = useState<any | null>(null);
-  const [artistArtworks, setArtistArtworks] = useState<any[]>([]);
+
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const [sortMode, setSortMode] = useState<SortOption>("random");
+
   const [hoveredNode, setHoveredNode] = useState<any | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
   const [isLoading, setIsLoading] = useState(true);
-  const fgRef = useRef<ForceGraphMethods>();
+
+  // COLORS
+
+  const bgColor = isArabic ? "#000000" : "#ECECEC";
+
+  const textColor = isArabic ? "#F5F5F5" : "#111111";
+
+  const borderColor = isArabic ? "#2A2A2A" : "#111111";
+
+  const cardBg = isArabic ? "#111111" : "#FFFFFF";
+
+  const accentColor = isArabic ? "#A970FF" : "#7B3FF2";
+
+  
+
+  // ARABIC ARTIST NAMES
+
+  const arabicArtistNames: Record<string, string> = {
+    "Ali Al-Shehabi": "علي الشهابي",
+
+    "Abdullah Miniawy": "عبدالله المنياوي",
+
+    "Ahmed Umar": "أحمد عمر",
+
+    "Basma Al-Sharif": "بسمة الشريف",
+
+    "Emii Alari": "إيمي العري",
+
+    "Fatma Charfi-M'Seddi": "فاطمة الشرفي المصدي",
+
+    "Farah Al Qasimi": "فرح القاسمي",
+
+    "Faisal Samra": "فيصل سمرة",
+
+    "Hassan Hajjaj": "حسن حجاج",
+
+    "Helen Zughaib": "هيلين زغيب",
+
+    "Hicham Berrada": "هشام برادة",
+
+    "Ishtar Yassin": "عشتار ياسين",
+
+    "Ibrahim ahmed": "إبراهيم أحمد",
+
+    "Jalal Toufic": "جلال توفيق",
+
+    "Jayce Salloum": "جايس سلوم",
+
+    "Jumana Manna": "جمانة مناع",
+
+    "Joyce Joumaa": "جويس جومعة",
+
+    "Khaled Barakeh": "خالد بركة",
+
+    "Larissa Sansour": "لاريسا صنصور",
+
+    "Mona Hatoum": "منى حاطوم",
+
+    "Marwan Arsanios": "مروان أرسانيوس",
+
+    "Michael(a) Dawood": "مايكل داوود",
+
+    "Mohamad Hafez": "محمد حافظ",
+
+    "Monira Al Qadiri": "منيرة القادري",
+
+    "Manal Al Dowayan": "منال الضويان",
+
+    "Nadia Ayari": "نادية العياري",
+
+    "Nada Harib": "ندى حارب",
+
+    "Najla said": "نجلاء سعيد",
+
+    "Osama Esid": "أسامة السيد",
+
+    "PhotoHussein (Hussein Nassereddine)": "فوتو حسين (حسين ناصر الدين)",
+
+    "Rita Kabalan": "ريتا كبالان",
+
+    "Rachid Koraïchi": "رشيد قريشي",
+
+    "Salah Elmur": "صلاح المر",
+
+    "Saba Innab": "صبا عناب",
+
+    "Stéphanie Saade": "ستيفاني سعادة",
+
+    "Samia Halaby": "سمية حلبي",
+
+    "Sakir Khader": "ساكر خضر",
+
+    "Sama Alshaibi": "سما الشيبي",
+
+    "Susan Hefuna": "سوزان حفونة",
+
+    "Sophia Al Maria": "صوفيا الماريا",
+
+    "Samer Mohdad": "سامر مهداوي",
+
+    "Sara Kontar": "سارة قنطار",
+
+    "Tarek Al Ghoussein": "طارق الغصين",
+
+    "Tewa Barnosa": "تيوا بارنوسا",
+
+    "Taysir Batniji": "تيسير بطنيجي",
+
+    "Walid Raad": "وليد رعد",
+
+    "Wafaa Bilal": "وفاء بلال",
+
+    "Youssef Nabil": "يوسف نبيل",
+
+    "Yto Barrada": "إيتو برادة",
+
+    "Zineb Sedira": "زينب سديرة",
+    "Nasa4Nasa (Noura Seif Hassanein/ Salma Abdel Salam)" : "ناسا فور ناسا (نورا سيف حسانين / سلمي عبدالسلام)",
+    "Yasmine Nasser Diaz":"ياسمين ناصر دياز",
+    "Joana & Khalil":"جوانا و خليل",
+    "Jannane Al-Ani":"جنان الأني ",
+    "Faraj Suleiman/ Majd Kayyal":"فراج سليمان / مجد كيال",
+  };
+
+  // IMAGE VALIDATION
+
+  const hasValidImage = (url?: string) => {
+    return (
+      url &&
+      typeof url === "string" &&
+      url.trim() !== "" &&
+      url !== "null" &&
+      url !== "undefined"
+    );
+  };
+
+  // FETCH ARTISTS
 
   useEffect(() => {
-    axios.get('http://54.174.102.52:5000/api/artists')
-      .then(res => setArtists(res.data.data || []))
-      .catch(err => console.error("Archive connection error:", err))
+    axios
+      .get("http://54.174.102.52:5000/api/artists")
+      .then((res) => {
+        const artistsData = res.data.data || [];
+
+        const filteredArtists = artistsData.filter((artist: any) => {
+          const hasImage =
+            hasValidImage(artist.Cloudinary_Image1) ||
+            hasValidImage(artist.Cloudinary_Image2) ||
+            hasValidImage(artist.Cloudinary_Image3);
+
+          const isSimoneFattal =
+            artist.Full_Name?.toLowerCase().trim() === "simone fattal";
+
+          return hasImage && !isSimoneFattal;
+        });
+
+        setArtists(filteredArtists);
+      })
+      .catch((err) => console.error(err))
       .finally(() => setIsLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (selectedArtist) {
-      const artistId = selectedArtist._id || selectedArtist.id;
-      axios.get(`http://54.174.102.52:5000/api/artworks?artist=${artistId}`)
-        .then(res => setArtistArtworks(res.data.data || []))
-        .catch(() => setArtistArtworks([]));
+  // GROUPING
+
+const alphabeticalArtists = useMemo(() => {
+  const grouped: Record<string, any[]> = {};
+
+  artists.forEach((artist) => {
+    const artistName = isArabic
+      ? arabicArtistNames[
+          artist.Full_Name?.trim()
+        ] || artist.Full_Name
+      : artist.Full_Name;
+
+    const firstLetter =
+      artistName?.charAt(0).toUpperCase() || "#";
+
+    if (!grouped[firstLetter]) {
+      grouped[firstLetter] = [];
     }
-  }, [selectedArtist]);
 
-  // HIGH-QUALITY IMAGE NODES
-  const getNodeObject = useCallback((node: any) => {
-    const imgUrl = node.Cloudinary_Image1 || 'https://placehold.co/200';
-    
-    if (!textureCache[imgUrl]) {
-      const tex = loader.load(imgUrl);
-      tex.minFilter = THREE.LinearFilter; // Improves visual quality
-      textureCache[imgUrl] = tex;
+    grouped[firstLetter].push(artist);
+  });
+
+  return grouped;
+}, [artists, isArabic]);
+
+  // IMAGE SIZES
+
+  const getRandomSize = (index: number) => {
+    const variations = [
+      { width: 95, height: 130 },
+      { width: 115, height: 150 },
+      { width: 85, height: 85 },
+      { width: 80, height: 105 },
+      { width: 130, height: 170 },
+      { width: 100, height: 130 },
+    ];
+
+    return variations[index % variations.length];
+  };
+
+  // POSITIONS
+
+  const generateScatteredPosition = (index: number) => {
+    const cols = 7;
+
+    const col = index % cols;
+
+    const row = Math.floor(index / cols);
+
+    const baseX = 50 + col * 170;
+
+    const baseY = 120 + row * 210;
+
+    const offsetX = (index * 31) % 28;
+
+    const offsetY = (index * 47) % 32;
+
+    return {
+      left: baseX + offsetX,
+      top: baseY + offsetY,
+    };
+  };
+
+  // GET IMAGE
+
+  const getArtistImage = (artist: any) => {
+    if (hasValidImage(artist.Cloudinary_Image1)) {
+      return artist.Cloudinary_Image1;
     }
 
-    const material = new THREE.SpriteMaterial({ 
-      map: textureCache[imgUrl],
-      color: 0xffffff
-    });
-    
-    const sprite = new THREE.Sprite(material);
-    sprite.scale.set(40, 40, 1); 
-    return sprite;
-  }, []);
+    if (hasValidImage(artist.Cloudinary_Image2)) {
+      return artist.Cloudinary_Image2;
+    }
 
-  const graphData = useMemo(() => ({ nodes: artists, links: [] }), [artists]);
+    if (hasValidImage(artist.Cloudinary_Image3)) {
+      return artist.Cloudinary_Image3;
+    }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
+    return "";
   };
 
   return (
-    <div 
-      style={{ width: '100vw', height: '100vh', background: '#FFFFFF', overflow: 'hidden' }}
-      onMouseMove={handleMouseMove}
+    <div
+      style={{
+        width: "100vw",
+        minHeight: "100vh",
+        background: bgColor,
+        color: textColor,
+        direction: isArabic ? "rtl" : "ltr",
+        overflowX: "hidden",
+      }}
     >
-      <Navbar />
+      {/* NAVBAR */}
 
-      {/* --- EXPANDED HOVER LABEL SYSTEM --- */}
-      {hoveredNode && !selectedArtist && (
-        <div style={{
-          ...styles.hoverLabel,
-          left: mousePos.x + 20,
-          top: mousePos.y + 20
-        }}>
-          <div style={styles.hoverName}>{hoveredNode.Full_Name || hoveredNode.name}</div>
-          
-          <div style={styles.hoverDetailRow}>
-            <span style={styles.hoverLabelKey}>BORN:</span>
-            <span style={styles.hoverLabelVal}>{hoveredNode.Birth_Year || '—'}</span>
-          </div>
+      <div
+        style={{
+          position: "fixed",
+          top: 20,
+          left: 0,
+          width: "100%",
+          zIndex: 99999,
+          paddingInline: 40,
+        }}
+      >
+        <Navbar />
+      </div>
 
-          <div style={styles.hoverDetailRow}>
-            <span style={styles.hoverLabelKey}>BASED:</span>
-            <span style={styles.hoverLabelVal}>{hoveredNode.Current_City || '—'}</span>
-          </div>
+      {/* SORT */}
 
-          <div style={styles.hoverDetailRow}>
-            <span style={styles.hoverLabelKey}>PRACTICE:</span>
-            <span style={styles.hoverLabelVal}>
-                {hoveredNode.Artistic_Practices?.split('\n')[0] || 'Visual Arts'}
-            </span>
+      {!selectedArtist && (
+        <div
+          style={{
+            position: "fixed",
+            top: 135,
+            right: isArabic ? "auto" : 40,
+            left: isArabic ? 40 : "auto",
+            zIndex: 999999,
+          }}
+        >
+          <button
+            onClick={() => setSortOpen(!sortOpen)}
+            style={{
+              border: `1px solid ${borderColor}`,
+              borderRadius: 30,
+              padding: "7px 18px",
+              background: bgColor,
+              color: textColor,
+              fontSize: 11,
+              fontFamily: "TWK Lausanne",
+              cursor: "pointer",
+            }}
+          >
+            {isArabic ? "ترتيب" : "SORT BY"}
+          </button>
+
+          {sortOpen && (
+            <div
+              style={{
+                marginTop: 10,
+                background: cardBg,
+                border: `1px solid ${borderColor}`,
+                minWidth: 180,
+              }}
+            >
+              <button
+                onClick={() => {
+                  setSortMode("alphabetical");
+
+                  setSortOpen(false);
+                }}
+                style={{
+                  ...sortBtn,
+                  background: cardBg,
+                  color: textColor,
+                  borderBottom: `1px solid ${borderColor}`,
+                }}
+              >
+                {isArabic ? "أبجدي" : "ALPHABETICAL"}
+              </button>
+
+              <button
+                onClick={() => {
+                  setSortMode("random");
+
+                  setSortOpen(false);
+                }}
+                style={{
+                  ...sortBtn,
+                  background: cardBg,
+                  color: textColor,
+                }}
+              >
+                {isArabic ? "عشوائي" : "RANDOM GRID"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* RANDOM */}
+
+      {!selectedArtist && sortMode === "random" && (
+        <div
+          style={{
+            width: "100%",
+            minHeight: "100vh",
+            position: "relative",
+            paddingTop: "120px",
+            paddingBottom: "200px",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              position: "relative",
+              height: `${Math.ceil(artists.length / 7) * 220}px`,
+            }}
+          >
+            {!isLoading &&
+              artists.map((artist, index) => {
+                const size = getRandomSize(index);
+
+                const position = generateScatteredPosition(index);
+
+                return (
+                  <div
+                    key={artist._id || index}
+                    onClick={() => setSelectedArtist(artist)}
+                    onMouseEnter={() => setHoveredNode(artist)}
+                    onMouseLeave={() => setHoveredNode(null)}
+                    style={{
+                      position: "absolute",
+                      left: position.left,
+                      top: position.top,
+                      width: size.width,
+                      height: size.height,
+                      cursor: "pointer",
+                      transition: "0.35s ease",
+                    }}
+                  >
+                    <img
+                      src={getArtistImage(artist)}
+                      alt={artist.Full_Name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                      }}
+                    />
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
 
-      <div style={{ display: selectedArtist ? 'none' : 'block' }}>
-        {!isLoading && (
-          <ForceGraph3D
-            ref={fgRef}
-            graphData={graphData}
-            backgroundColor="#FFFFFF"
-            showNavInfo={false}
-            nodeThreeObject={getNodeObject}
-            enableNodeDrag={false} 
-            onNodeHover={(node) => setHoveredNode(node)}
-            onNodeClick={(node: any) => setSelectedArtist(node)}
-          />
-        )}
-      </div>
+      {/* ALPHABETICAL */}
+
+      {!selectedArtist && sortMode === "alphabetical" && (
+        <div
+          style={{
+            paddingTop: 170,
+            paddingInline: 40,
+            paddingBottom: 120,
+            background: bgColor,
+            color: textColor,
+            minHeight: "100vh",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              textAlign: "center",
+              marginBottom: 100,
+            }}
+          >
+            <h1
+              style={{
+                fontSize: 82,
+                fontFamily: "OT Neue Montreal",
+                color: accentColor,
+                margin: 0,
+                fontWeight: 700,
+              }}
+            >
+              {isArabic ? "الفنانون" : "ARTISTS"}
+            </h1>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4,1fr)",
+              gap: "120px 60px",
+            }}
+          >
+            {Object.entries(alphabeticalArtists)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([letter, artists]) => (
+                <div key={letter}>
+                  <div
+                    style={{
+                      fontSize: 90,
+                      fontWeight: 700,
+                      marginBottom: 20,
+                      fontFamily: "OT Neue Montreal",
+                      lineHeight: 1,
+                      color: accentColor,
+                    }}
+                  >
+                    {letter}
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                    }}
+                  >
+                    {artists.map((artist: any) => (
+                      <div
+                        key={artist._id}
+                        onClick={() => setSelectedArtist(artist)}
+                        style={{
+                          cursor: "pointer",
+                          fontSize: 12,
+                          fontFamily: "TWK Lausanne",
+                          opacity: 0.75,
+                        }}
+                      >
+                        {isArabic
+                          ? arabicArtistNames[artist.Full_Name?.trim()] ||
+                            artist.Full_Name
+                          : artist.Full_Name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* HOVER */}
+
+      {hoveredNode && !selectedArtist && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 30,
+            left: isArabic ? "auto" : 30,
+            right: isArabic ? 30 : "auto",
+            background: isArabic
+              ? "rgba(15,15,15,0.97)"
+              : "rgba(255,255,255,0.97)",
+            color: textColor,
+            border: `1px solid ${borderColor}`,
+            padding: "18px 22px",
+            zIndex: 999999,
+            minWidth: 240,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 600,
+              marginBottom: 10,
+              fontFamily: "OT Neue Montreal",
+            }}
+          >
+            {isArabic
+              ? arabicArtistNames[hoveredNode.Full_Name?.trim()] ||
+                hoveredNode.Full_Name
+              : hoveredNode.Full_Name}
+          </div>
+
+          <div
+            style={{
+              fontSize: 11,
+              opacity: 0.7,
+              lineHeight: 1.8,
+              fontFamily: "TWK Lausanne",
+            }}
+          >
+            <div>
+              {isArabic ? "الميلاد: " : "BORN: "}
+              {hoveredNode.Birth_Year || "—"}
+            </div>
+
+            <div>
+              {isArabic ? "الموقع: " : "BASED: "}
+              {isArabic
+                ? hoveredNode.Current_City_In_Arabic ||
+                  hoveredNode.Current_City ||
+                  "—"
+                : hoveredNode.Current_City || "—"}
+            </div>
+
+            <div>
+              {isArabic ? "الممارسة: " : "PRACTICE: "}
+
+              {isArabic
+                ? hoveredNode.Artistic_Practices_In_Arabic?.split("\n")[0] ||
+                  hoveredNode.Artistic_Practices?.split("\n")[0] ||
+                  "فنون بصرية"
+                : hoveredNode.Artistic_Practices?.split("\n")[0] ||
+                  "Visual Arts"}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DETAILS */}
+
+      {/* DETAILS */}
 
       {selectedArtist && (
-        <div style={styles.overlay} onClick={() => setSelectedArtist(null)}>
-          <img src={selectedArtist.Cloudinary_Image1} style={styles.bgImage} alt="" />
+        <div
+          style={{
+            background: bgColor,
+            color: textColor,
+            minHeight: "100vh",
+          }}
+        >
+          {/* TOP NAV */}
+          <div
+            style={{
+              paddingInline: 40,
+              paddingTop: 20,
+              paddingBottom: 20,
+              borderBottom: `1px solid ${borderColor}`,
+            }}
+          >
+            <Navbar />
+          </div>
+          {/* BACK */}
+          <button
+            onClick={() => setSelectedArtist(null)}
+            style={{
+              position: "fixed",
+              top: 115,
+              left: isArabic ? "auto" : 22,
+              right: isArabic ? 22 : "auto",
 
-          {artistArtworks.map((art, i) => {
-            const pos = scatteredPositions[i % scatteredPositions.length];
-            return (
-              <Link 
-                key={art._id} 
-                to={`/artwork/${art._id}`} 
-                style={{ ...styles.scatteredItem, left: pos.x, top: pos.y, textDecoration: 'none' }}
-                onClick={(e) => e.stopPropagation()} 
+              border: "none",
+
+              background: isArabic ? "rgba(0,0,0,0.75)" : "transparent",
+
+              color: isArabic ? "#FFFFFF" : "#000000",
+
+              fontSize: isArabic ? 36 : 52,
+
+              lineHeight: 1,
+
+              paddingBottom: isArabic ? 2 : 0,
+
+              width: isArabic ? 52 : "auto",
+
+              height: isArabic ? 52 : "auto",
+
+              borderRadius: "50%",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              cursor: "pointer",
+
+              zIndex: 999999,
+
+              backdropFilter: isArabic ? "blur(6px)" : "none",
+            }}
+          >
+            {isArabic ? "›" : "‹"}
+          </button>
+          ٍ{/* MAIN */}
+          <div
+            style={{
+              width: "100%",
+              display: "grid",
+              gridTemplateColumns: isArabic ? "1fr 1fr" : "1fr 1fr",
+              borderTop: `1px solid ${borderColor}`,
+              marginTop: 35,
+            }}
+          >
+            {/* LEFT IMAGE */}
+
+            <div
+              style={{
+                borderRight: !isArabic ? `1px solid ${borderColor}` : "none",
+
+                borderLeft: isArabic ? `1px solid ${borderColor}` : "none",
+
+                padding: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  border: `1px solid ${borderColor}`,
+                  padding: 16,
+                }}
               >
-                <img 
-                   src={art.Cloudinary_Image1 || art.imageUrl} 
-                   style={styles.scatteredImg} 
-                   alt={art.Title || art.title} 
+                <img
+                  src={getArtistImage(selectedArtist)}
+                  alt=""
+                  style={{
+                    width: 430,
+                    height: 560,
+                    objectFit: "cover",
+                    display: "block",
+                  }}
                 />
-                <div style={styles.scatteredLabel}>{art.Title || art.title}</div>
-              </Link>
-            );
-          })}
+              </div>
+            </div>
 
-          <div style={styles.infoSheet} onClick={(e) => e.stopPropagation()}>
-            <button style={styles.closeBtn} onClick={() => setSelectedArtist(null)}>✕</button>
-            <div style={styles.nameHeader}>{selectedArtist.Full_Name || selectedArtist.name}</div>
-            
-            <div style={{...styles.label, left: 272, top: 64}}>CONTACT INFO:</div>
-            <div style={{...styles.value, left: 247, top: 92}}>{selectedArtist.Email || 'atlalcompendium@gmail.com'}</div>
-            
-            <div style={{...styles.label, left: 23, top: 130}}>YEAR OF BIRTH:</div>
-            <div style={{...styles.value, left: 23, top: 160}}>{selectedArtist.Birth_Year || '—'}</div>
-            
-            <div style={{...styles.label, left: 573, top: 130}}>BASED IN:</div>
-            <div style={{...styles.value, left: 519, top: 160}}>{selectedArtist.Current_City || '—'}</div>
-            
-            <div style={{...styles.label, left: 23, top: 179}}>BIOGRAPHY:</div>
-            <div style={styles.bioBox}>
-              {language === 'ENG' ? (selectedArtist.Bio_In_English || selectedArtist.biography) : (selectedArtist.Bio_In_Arabic || selectedArtist.biography)}
+            {/* RIGHT CONTENT */}
+
+            <div>
+              {/* FILE HEADER */}
+
+              <div
+                style={{
+                  height: 28,
+                  borderBottom: `1px solid ${borderColor}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingInline: 12,
+                  color: accentColor,
+                  fontSize: 11,
+                  fontFamily: "TWK Lausanne",
+                }}
+              >
+                <span>
+                  JPG.\
+                  {(isArabic
+                    ? arabicArtistNames[selectedArtist.Full_Name?.trim()] ||
+                      selectedArtist.Full_Name
+                    : selectedArtist.Full_Name
+                  )
+                    ?.replace(/\s/g, "_")
+                    .toUpperCase()}
+                  _IMAGE.AR
+                </span>
+
+                <span>{isArabic ? "أطلال" : ""}</span>
+              </div>
+
+              {/* TITLE */}
+
+              <div
+                style={{
+                  borderBottom: `1px solid ${borderColor}`,
+                  padding: "10px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 24,
+                  background: isArabic ? "#000" : "#fff",
+                  color: isArabic ? "#fff" : "#000",
+                }}
+              >
+                {/* <div
+                  style={{
+                    fontSize: 58,
+                    lineHeight: 1,
+                    color: accentColor,
+                    fontFamily: "OT Neue Montreal",
+                  }}
+                >
+                  {isArabic ? "٢٠" : ">AR20"}
+                </div> */}
+
+                <div
+                  style={{
+                    fontSize: 34,
+                    fontFamily: "OT Neue Montreal",
+                    textTransform: isArabic ? "none" : "uppercase",
+                  }}
+                >
+                  {isArabic
+                    ? arabicArtistNames[selectedArtist.Full_Name?.trim()] ||
+                      selectedArtist.Full_Name
+                    : selectedArtist.Full_Name}
+                </div>
+              </div>
+
+              {/* ROWS */}
+
+              {[
+                [
+                  isArabic ? "سنة الميلاد:" : "YEAR OF BIRTH:",
+                  selectedArtist.Birth_Year,
+                ],
+
+                [
+                  isArabic ? "مكان الإقامة:" : "BASED IN:",
+                  isArabic
+                    ? selectedArtist.Current_City_In_Arabic ||
+                      selectedArtist.Current_City
+                    : selectedArtist.Current_City,
+                ],
+
+                [
+                  isArabic ? "المجالات:" : "FIELDS:",
+                  isArabic
+                    ? selectedArtist.Fields_In_Arabic || selectedArtist.Fields
+                    : selectedArtist.Fields,
+                ],
+
+                [
+                  isArabic ? "الممارسات الفنية:" : "ARTISTIC PRACTICES:",
+                  isArabic
+                    ? selectedArtist.Artistic_Practices_In_Arabic ||
+                      selectedArtist.Artistic_Practices
+                    : selectedArtist.Artistic_Practices,
+                ],
+
+                [
+                  isArabic ? "الشهادة:" : "DEGREE:",
+                  isArabic
+                    ? selectedArtist.Undergraduate_Degree_In_Arabic ||
+                      selectedArtist.Undergraduate_Degree
+                    : selectedArtist.Undergraduate_Degree,
+                ],
+              ].map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    borderBottom: `1px solid ${borderColor}`,
+                    padding: "16px 18px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 16,
+                      marginBottom: 10,
+                      fontFamily: "OT Neue Montreal",
+                    }}
+                  >
+                    {item[0]}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      lineHeight: 2,
+                      opacity: 0.85,
+                      fontFamily: "TWK Lausanne",
+                    }}
+                  >
+                    {item[1] || "—"}
+                  </div>
+                </div>
+              ))}
+
+              {/* BIO */}
+
+              <div
+                style={{
+                  borderBottom: `1px solid ${borderColor}`,
+                  padding: "16px 18px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 16,
+                    marginBottom: 12,
+                    fontFamily: "OT Neue Montreal",
+                  }}
+                >
+                  {isArabic ? "سيرة ذاتية" : "BIOGRAPHY:"}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    lineHeight: 2,
+                    opacity: 0.85,
+                    fontFamily: "TWK Lausanne",
+                  }}
+                >
+                  {isArabic
+                    ? selectedArtist.Bio_In_Arabic ||
+                      selectedArtist.Bio_In_English
+                    : selectedArtist.Bio_In_English}
+                </div>
+              </div>
+
+              {/* CONTACT */}
+
+              <div
+                style={{
+                  padding: "16px 18px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 16,
+                    marginBottom: 12,
+                    fontFamily: "OT Neue Montreal",
+                  }}
+                >
+                  {isArabic ? "تواصل" : "CONTACT INFO:"}
+                </div>
+
+                <a
+                  href={`mailto:${selectedArtist.Email}`}
+                  style={{
+                    color: accentColor,
+                    textDecoration: "none",
+                    fontSize: 14,
+                    fontFamily: "TWK Lausanne",
+                  }}
+                >
+                  {selectedArtist.Email || "—"}
+                </a>
+              </div>
             </div>
-            
-            <div style={{...styles.label, left: 555, top: 179}}>PORTFOLIO:</div>
-            <div style={styles.portfolioSideList}>
-               {artistArtworks.slice(0, 8).map(a => <div key={a._id}>{a.Title || a.title}</div>)}
-            </div>
-            
-            <div style={{...styles.label, left: 23, top: 341}}>ARTISTIC PRACTICES:</div>
-            <div style={styles.practiceText}>{selectedArtist.Artistic_Practices || "Mixed Media"}</div>
-            
-            <div style={{...styles.label, left: 591, top: 356}}>FIELDS:</div>
-            <div style={{...styles.value, left: 524, top: 381, textAlign: 'right' as const}}>{selectedArtist.Undergraduate_Degree || 'Fine Arts'}</div>
-            
-            <div style={{...styles.label, left: 201, top: 444, width: '100%', textAlign: 'center' as const}}>APPEARANCES IN PUBLICATIONS:</div>
-            <div style={styles.pubRow}>
-               {[1, 2, 3, 4, 5].map(n => <img key={n} src="https://placehold.co/75x104" style={styles.pubThumb} alt=""/>)}
-            </div>
+          </div>
+          {/* PUBLICATIONS */}
+          <div
+            style={{
+              borderTop: `1px solid ${borderColor}`,
+              borderBottom: `1px solid ${borderColor}`,
+              textAlign: "center",
+              padding: "40px 0",
+            }}
+          >
+            <h1
+              style={{
+                fontSize: 72,
+                color: accentColor,
+                fontFamily: "OT Neue Montreal",
+                margin: 0,
+              }}
+            >
+              {isArabic ? "الظهور في المنشورات" : "APPEARANCES IN PUBLICATIONS"}
+            </h1>
+          </div>
+          {/* BOOKS */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              padding: "60px 80px",
+            }}
+          >
+            {[
+              {
+                image: "/book1.png",
+                title: isArabic ? "كتاب ١." : "BOOK 01",
+              },
+
+              {
+                image: "/book1.png",
+                title: isArabic ? "كتاب ٢." : "BOOK 02",
+              },
+
+              {
+                image: "/book3.png",
+                title: isArabic ? "كتاب ٣." : "BOOK 03",
+              },
+            ].map((book, index) => (
+              <div
+                key={index}
+                style={{
+                  textAlign: "center",
+                }}
+              >
+                <img
+                  src={book.image}
+                  alt=""
+                  style={{
+                    width: 150,
+                    marginBottom: 20,
+                  }}
+                />
+
+                <div
+                  style={{
+                    fontSize: 18,
+                    textDecoration: "underline",
+                    fontFamily: "TWK Lausanne",
+                  }}
+                >
+                  {book.title}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -174,38 +964,14 @@ const Home: React.FC = () => {
   );
 };
 
-const scatteredPositions = [
-  { x: 31.91, y: 523.31 }, { x: 154.19, y: 470.88 }, { x: 141.56, y: 346.08 },
-  { x: 1307.06, y: 466.15 }, { x: 1307.06, y: 638.26 }, { x: 15.13, y: 223.52 },
-  { x: 1230.06, y: 158.87 }, { x: 1036.76, y: 739.90 }, { x: 826.92, y: 745.90 }
-];
-
-const styles = {
-  hoverLabel: {
-    position: 'fixed' as const, zIndex: 10000, pointerEvents: 'none' as const,
-    background: 'rgba(0,0,0,0.9)', color: 'white', padding: '15px', borderRadius: '2px',
-    display: 'flex', flexDirection: 'column' as const, gap: '8px', minWidth: '200px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)'
-  },
-  hoverName: { fontSize: '18px', fontWeight: 'bold' as any, fontFamily: 'OT Neue Montreal', textTransform: 'uppercase' as const, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: '5px', marginBottom: '5px' },
-  hoverDetailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  hoverLabelKey: { fontSize: '9px', fontWeight: 'bold' as any, opacity: 0.6, fontFamily: 'OT Neue Montreal' },
-  hoverLabelVal: { fontSize: '11px', fontFamily: 'TWK Lausanne', textAlign: 'right' as const },
-  overlay: { position: 'fixed' as const, top: 0, left: 0, width: '100vw', height: '100vh', background: '#ECECEC', zIndex: 9999, overflow: 'hidden' },
-  bgImage: { width: '1437px', height: '958px', left: 0, top: '-17px', position: 'absolute' as const, mixBlendMode: 'multiply' as const, opacity: 0.7, zIndex: 1 },
-  infoSheet: { width: '665.26px', height: '606.84px', left: '50%', top: '55%', transform: 'translate(-50%, -50%)', position: 'absolute' as const, opacity: 0.85, background: 'white', zIndex: 10, overflow: 'hidden' },
-  nameHeader: { width: '100%', top: '7.43px', position: 'absolute' as const, textAlign: 'center' as const, fontSize: '45.73px', fontFamily: 'OT Neue Montreal', fontWeight: '500', textTransform: 'uppercase' as const },
-  label: { position: 'absolute' as const, fontSize: '16px', fontWeight: '600' as any, fontFamily: 'OT Neue Montreal', color: 'black' },
-  value: { position: 'absolute' as const, fontSize: '10px', fontFamily: 'TWK Lausanne', fontWeight: '200' as any, textTransform: 'uppercase' as const },
-  bioBox: { position: 'absolute' as const, left: '23.22px', top: '207.72px', width: '450px', height: '130px', fontSize: '11px', fontFamily: 'TWK Lausanne', lineHeight: '1.4', overflowY: 'auto' as const },
-  practiceText: { position: 'absolute' as const, left: '23.22px', top: '366.95px', fontSize: '12px', fontFamily: 'TWK Lausanne', whiteSpace: 'pre-line' as const },
-  portfolioSideList: { position: 'absolute' as const, right: '23px', top: '204px', textAlign: 'right' as const, fontSize: '10px', fontFamily: 'TWK Lausanne', fontWeight: '200' as any },
-  pubRow: { position: 'absolute' as const, bottom: '25px', width: '100%', display: 'flex', justifyContent: 'center' as const, gap: '10px' },
-  pubThumb: { width: '65px', height: '90px', border: '1px solid #ddd' },
-  scatteredItem: { position: 'absolute' as const, zIndex: 100, display: 'flex', flexDirection: 'column' as const, alignItems: 'center' }, 
-  scatteredImg: { width: '103.77px', height: '62.73px', border: '1px solid black', objectFit: 'cover' as const },
-  scatteredLabel: { fontSize: '13px', fontFamily: 'TWK Lausanne', textTransform: 'uppercase' as const, marginTop: '5px', color: 'black' },
-  closeBtn: { position: 'absolute' as const, right: '20px', top: '20px', background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', zIndex: 100 }
+const sortBtn: React.CSSProperties = {
+  width: "100%",
+  padding: "14px 18px",
+  border: "none",
+  textAlign: "left",
+  cursor: "pointer",
+  fontSize: 11,
+  fontFamily: "TWK Lausanne",
 };
 
 export default Home;

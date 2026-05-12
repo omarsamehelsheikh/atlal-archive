@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminService } from '../../../services/api';
-import { ArrowLeft, Save, Upload, Loader2 } from 'lucide-react'; // Added Loader2
+import { ArrowLeft, Save, Upload, Loader2, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FormField = ({ label, value, onChange, placeholder = "", dir = "ltr", disabled = false }: any) => (
@@ -34,11 +34,11 @@ export const AdminArtworkForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(false); // Added for initial load
+  const [fetching, setFetching] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState('general');
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     Artwork_ID: '',
     Student: '',
     Artist_ID: '',
@@ -59,7 +59,8 @@ export const AdminArtworkForm = () => {
     Film_Image_Resolution: '',
     Film_Image_URL: '',
     Film_Image_Source: '',
-    Cloudinary_Image_URL: '',
+    // UPDATED: Now managed as an array in state
+    Cloudinary_Image_URLs: [''], 
     Section_ID: '',
     Section_Title: '',
     Book_ID: '',
@@ -77,7 +78,9 @@ export const AdminArtworkForm = () => {
           setFormData({
             ...actualData,
             Themes: Array.isArray(actualData.Themes) ? actualData.Themes.join(', ') : '',
-            Tags: Array.isArray(actualData.Tags) ? actualData.Tags.join(', ') : ''
+            Tags: Array.isArray(actualData.Tags) ? actualData.Tags.join(', ') : '',
+            // Ensure we have at least one empty field if empty
+            Cloudinary_Image_URLs: actualData.Cloudinary_Image_URLs?.length > 0 ? actualData.Cloudinary_Image_URLs : ['']
           });
         }
       })
@@ -86,8 +89,23 @@ export const AdminArtworkForm = () => {
     }
   }, [id]);
 
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const updateField = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUrlChange = (index: number, val: string) => {
+    const updated = [...formData.Cloudinary_Image_URLs];
+    updated[index] = val;
+    updateField('Cloudinary_Image_URLs', updated);
+  };
+
+  const addImageField = () => {
+    updateField('Cloudinary_Image_URLs', [...formData.Cloudinary_Image_URLs, '']);
+  };
+
+  const removeImageField = (index: number) => {
+    const filtered = formData.Cloudinary_Image_URLs.filter((_: any, i: number) => i !== index);
+    updateField('Cloudinary_Image_URLs', filtered.length ? filtered : ['']);
   };
 
   const handleManualSubmit = async (e: React.FormEvent) => {
@@ -96,8 +114,9 @@ export const AdminArtworkForm = () => {
 
     const finalData = {
       ...formData,
-      Themes: formData.Themes.split(',').map(v => v.trim()).filter(v => v !== ""),
-      Tags: formData.Tags.split(',').map(v => v.trim()).filter(v => v !== "")
+      Themes: formData.Themes.split(',').map((v: any) => v.trim()).filter((v: any) => v !== ""),
+      Tags: formData.Tags.split(',').map((v: any) => v.trim()).filter((v: any) => v !== ""),
+      Cloudinary_Image_URLs: formData.Cloudinary_Image_URLs.filter((url: string) => url.trim() !== "")
     };
 
     try {
@@ -112,25 +131,14 @@ export const AdminArtworkForm = () => {
   };
 
   const handleExcelImport = async () => {
-    console.log("🛠️ Process Button Clicked"); // DEBUG LOG
-    
-    if (!file) {
-      console.warn("⚠️ No file selected");
-      return toast.error("Select Excel file first");
-    }
-
+    if (!file) return toast.error("Select Excel file first");
     setLoading(true);
-    console.log("🚀 Uploading file:", file.name);
-
     try {
-      const response = await AdminService.importData('artwork', file);
-      console.log("✅ Server Response:", response.data);
-      
+      await AdminService.importData('artwork', file);
       toast.success("Bulk Artwork Import Success");
       navigate('/admin/artworks');
     } catch (err: any) {
-      console.error("❌ Import Failed:", err.response?.data || err.message);
-      toast.error("Excel Import Failed - Check console for details");
+      toast.error("Excel Import Failed");
     } finally {
       setLoading(false);
     }
@@ -184,7 +192,25 @@ export const AdminArtworkForm = () => {
 
               {activeTab === 'visuals' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
-                  <FormField label="Cloudinary Main URL" value={formData.Cloudinary_Image_URL} onChange={(v: string) => updateField('Cloudinary_Image_URL', v)} />
+                  <div className="space-y-3">
+                    <label className="text-[9px] font-black uppercase text-gray-500 ml-1">Cloudinary Image Gallery</label>
+                    {formData.Cloudinary_Image_URLs.map((url: string, index: number) => (
+                      <div key={index} className="flex gap-2 group">
+                        <input 
+                          value={url}
+                          onChange={(e) => handleImageUrlChange(index, e.target.value)}
+                          className="flex-1 bg-white/5 border border-white/10 p-3 rounded-xl text-xs text-white outline-none focus:border-primary transition-all font-bold"
+                          placeholder="https://res.cloudinary.com/..."
+                        />
+                        <button type="button" onClick={() => removeImageField(index)} className="p-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-all">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={addImageField} className="flex items-center gap-2 text-primary font-black text-[9px] uppercase tracking-widest mt-2 hover:text-white transition-colors">
+                      <Plus size={14} /> Add Another Image
+                    </button>
+                  </div>
                   <TextAreaField label="Description (EN)" value={formData.Artwork_Description_In_English} onChange={(v: string) => updateField('Artwork_Description_In_English', v)} />
                   <TextAreaField label="Description (AR)" value={formData.Artwork_Description_In_Arabic} onChange={(v: string) => updateField('Artwork_Description_In_Arabic', v)} dir="rtl" />
                 </div>
@@ -221,7 +247,6 @@ export const AdminArtworkForm = () => {
                   className="absolute inset-0 opacity-0 cursor-pointer z-20" 
                   onChange={e => {
                     const selected = e.target.files?.[0] || null;
-                    console.log("📂 File attached:", selected?.name);
                     setFile(selected);
                   }} 
                 />
