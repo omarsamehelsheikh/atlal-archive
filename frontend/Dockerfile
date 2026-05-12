@@ -2,13 +2,15 @@
 FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+
+# ADD --legacy-peer-deps HERE:
+RUN npm install --legacy-peer-deps
+
 COPY . .
 RUN npm run build
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:stable-alpine
-# This pulls the build from the Stage 1 above, NOT from your Windows folder
 COPY --from=build /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
