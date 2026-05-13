@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminService } from '../../../services/api';
-import { ArrowLeft, Save, Upload, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Loader2, Plus, Trash2, FileSpreadsheet, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FormField = ({ label, value, onChange, placeholder = "", dir = "ltr", disabled = false }: any) => (
@@ -59,7 +59,6 @@ export const AdminArtworkForm = () => {
     Film_Image_Resolution: '',
     Film_Image_URL: '',
     Film_Image_Source: '',
-    // UPDATED: Now managed as an array in state
     Cloudinary_Image_URLs: [''], 
     Section_ID: '',
     Section_Title: '',
@@ -79,7 +78,6 @@ export const AdminArtworkForm = () => {
             ...actualData,
             Themes: Array.isArray(actualData.Themes) ? actualData.Themes.join(', ') : '',
             Tags: Array.isArray(actualData.Tags) ? actualData.Tags.join(', ') : '',
-            // Ensure we have at least one empty field if empty
             Cloudinary_Image_URLs: actualData.Cloudinary_Image_URLs?.length > 0 ? actualData.Cloudinary_Image_URLs : ['']
           });
         }
@@ -134,8 +132,9 @@ export const AdminArtworkForm = () => {
     if (!file) return toast.error("Select Excel file first");
     setLoading(true);
     try {
+      // This call handles the backend logic where repeated IDs are grouped
       await AdminService.importData('artwork', file);
-      toast.success("Bulk Artwork Import Success");
+      toast.success("Bulk Artwork Import Success (Duplicates Merged)");
       navigate('/admin/artworks');
     } catch (err: any) {
       toast.error("Excel Import Failed");
@@ -152,22 +151,69 @@ export const AdminArtworkForm = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8 animate-in fade-in duration-700">
-      <div className="flex justify-between items-center">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">
-          <ArrowLeft size={14} /> Back to Gallery
-        </button>
+      
+      {/* HEADER & TABS */}
+      <div className="flex justify-between items-end">
+        <div className="space-y-4">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">
+            <ArrowLeft size={14} /> Back to Gallery
+          </button>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter">
+            Archive <span className="text-primary">Management</span>
+          </h1>
+        </div>
+
         <div className="flex gap-2">
           {['general', 'visuals', 'archive'].map(tab => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-primary text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-primary text-black shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
             >
               {tab}
             </button>
           ))}
         </div>
       </div>
+
+      {/* DEDICATED FAST SYNC ENGINE (Excel Import) */}
+      {!id && (
+        <div className="bg-primary/5 border border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-primary/20 p-4 rounded-2xl text-primary">
+              <FileSpreadsheet size={24} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black uppercase italic">Fast Sync <span className="text-primary">Engine</span></h3>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Merges duplicate IDs and syncs image arrays automatically</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <input 
+                type="file" 
+                className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                onChange={e => setFile(e.target.files?.[0] || null)}
+              />
+              <div className="bg-black/40 border border-white/10 px-4 py-3 rounded-xl flex items-center justify-between">
+                <span className="text-[9px] font-black uppercase text-gray-400 truncate max-w-[150px]">
+                  {file ? file.name : "Select artworks.xlsx..."}
+                </span>
+                <Upload size={14} className="text-primary" />
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleExcelImport}
+              disabled={loading || !file}
+              className="bg-primary text-black px-8 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-white transition-all disabled:opacity-20"
+            >
+              {loading ? "Processing..." : "Run Import Script"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3">
@@ -238,32 +284,27 @@ export const AdminArtworkForm = () => {
         </div>
 
         <div className="space-y-6">
-          {!id && (
-            <div className="bg-[#0f0f0f] p-8 rounded-[2.5rem] border border-white/5 text-center h-fit sticky top-6">
-              <h3 className="text-xs font-black uppercase italic mb-6">Bulk <span className="text-primary">Sync</span></h3>
-              <div className="border-2 border-dashed border-white/10 rounded-2xl p-10 relative group mb-4 cursor-pointer hover:border-primary/50 transition-all">
-                <input 
-                  type="file" 
-                  className="absolute inset-0 opacity-0 cursor-pointer z-20" 
-                  onChange={e => {
-                    const selected = e.target.files?.[0] || null;
-                    setFile(selected);
-                  }} 
-                />
-                <Upload className="mx-auto text-gray-500 group-hover:text-primary transition-colors mb-4" size={32} />
-                <p className="text-[9px] font-black text-gray-500 uppercase truncate px-2">
-                  {file ? file.name : 'Drop Spreadsheet'}
-                </p>
-              </div>
-              <button 
-                onClick={handleExcelImport} 
-                disabled={loading || !file} 
-                className="w-full bg-white/5 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all disabled:opacity-30"
-              >
-                {loading ? 'Processing...' : 'Process'}
-              </button>
-            </div>
-          )}
+          <div className="bg-[#0f0f0f] p-8 rounded-[2.5rem] border border-white/5 sticky top-6">
+            <h3 className="text-[10px] font-black uppercase italic mb-4 text-primary">Archive Protocol</h3>
+            <ul className="space-y-4">
+              <li className="flex gap-3">
+                <div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" />
+                <p className="text-[9px] text-gray-400 font-bold uppercase leading-relaxed">IDs must match Excel naming conventions for sync compatibility.</p>
+              </li>
+              <li className="flex gap-3">
+                <div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" />
+                <p className="text-[9px] text-gray-400 font-bold uppercase leading-relaxed">Visuals tab supports multi-image arrays for a single record.</p>
+              </li>
+              <li className="flex gap-3">
+                <div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" />
+                <p className="text-[9px] text-gray-400 font-bold uppercase leading-relaxed">Import script handles relational handshake between pieces and artists.</p>
+              </li>
+            </ul>
+            
+            <button className="w-full mt-8 flex items-center justify-center gap-2 border border-white/10 py-3 rounded-xl text-[8px] font-black uppercase tracking-tighter text-gray-500 hover:text-white hover:border-white/20 transition-all">
+              <Download size={12} /> Download Data Template
+            </button>
+          </div>
         </div>
       </div>
     </div>
