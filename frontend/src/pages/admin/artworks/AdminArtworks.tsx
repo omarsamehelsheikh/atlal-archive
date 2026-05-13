@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
 import { AdminService } from '../../../services/api';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, FileSpreadsheet, Upload, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export const AdminArtworks = () => {
   const [artworks, setArtworks] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const fetchData = async () => {
     try {
       const res: any = await AdminService.getAllArtworks();
       setArtworks(res.data?.data || []);
-    } catch (err) { setArtworks([]); }
+    } catch (err) { 
+      setArtworks([]); 
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -23,7 +27,25 @@ export const AdminArtworks = () => {
       await AdminService.deleteArtwork(id);
       toast.success("Piece Removed");
       fetchData();
-    } catch (err) { toast.error("Delete Failed"); }
+    } catch (err) { 
+      toast.error("Delete Failed"); 
+    }
+  };
+
+  const handleExcelImport = async () => {
+    if (!file) return toast.error("Select Artwork Excel file first");
+    setImporting(true);
+    try {
+      // Changed to 'artwork' to target the correct endpoint
+      await AdminService.importData('artwork', file);
+      toast.success("Gallery Registry Synced");
+      setFile(null);
+      fetchData();
+    } catch (err: any) {
+      toast.error("Import Failed");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const filtered = artworks.filter(art => 
@@ -41,6 +63,43 @@ export const AdminArtworks = () => {
         <Link to="/admin/artworks/add" className="bg-primary text-black px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white transition-all shadow-lg">
           <Plus size={16} className="inline mr-1" /> Catalog Piece
         </Link>
+      </div>
+
+      {/* GALLERY SYNC ENGINE - Switched to Artworks */}
+      <div className="bg-primary/5 border border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="bg-primary/20 p-4 rounded-2xl text-primary">
+            <FileSpreadsheet size={24} />
+          </div>
+          <div>
+            <h3 className="text-sm font-black uppercase italic text-white">Gallery <span className="text-primary">Sync</span></h3>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Upload artwork_registry.xlsx to bulk update catalog</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <input 
+              type="file" 
+              className="absolute inset-0 opacity-0 cursor-pointer z-10" 
+              onChange={e => setFile(e.target.files?.[0] || null)}
+            />
+            <div className="bg-black/40 border border-white/10 px-4 py-3 rounded-xl flex items-center justify-between">
+              <span className="text-[9px] font-black uppercase text-gray-400 truncate max-w-[150px]">
+                {file ? file.name : "Select Spreadsheet..."}
+              </span>
+              <Upload size={14} className="text-primary" />
+            </div>
+          </div>
+          
+          <button 
+            onClick={handleExcelImport}
+            disabled={importing || !file}
+            className="bg-primary text-black px-8 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-white transition-all disabled:opacity-20 flex items-center gap-2"
+          >
+            {importing ? <Loader2 size={14} className="animate-spin" /> : "Sync Gallery"}
+          </button>
+        </div>
       </div>
 
       <div className="relative">

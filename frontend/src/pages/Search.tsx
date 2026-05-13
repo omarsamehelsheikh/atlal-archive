@@ -772,7 +772,7 @@ const Search: React.FC = () => {
   const { language } = useLanguage();
   const isArabic = language === "AR";
 
-  const bgColor = isArabic ? "#000000" : "#ECECEC";
+const bgColor = isArabic ? "#000000" : "#FFFFFF";
   const textColor = isArabic ? "#F5F5F5" : "#111111";
   const borderColor = isArabic ? "#2A2A2A" : "#8f8f8f";
   const accentColor = isArabic ? "#A970FF" : "#7B3FF2";
@@ -830,13 +830,13 @@ const Search: React.FC = () => {
     try {
       const [artworkRes, artistRes, bookRes] = await Promise.all([
         axios
-          .get("/api/artworks")
+          .get("http://54.174.102.52:5000/api/artworks")
           .catch(() => ({ data: { data: [] } })),
         axios
-          .get("/api/artists")
+          .get("http://54.174.102.52:5000/api/artists")
           .catch(() => ({ data: { data: [] } })),
         axios
-          .get("/api/books")
+          .get("http://54.174.102.52:5000/api/books")
           .catch(() => ({ data: { data: [] } })),
       ]);
 
@@ -1052,7 +1052,7 @@ const Search: React.FC = () => {
               <div
                 style={{
                   fontSize: 34,
-                  fontFamily: "OT Neue Montreal",
+                  fontFamily: '"Edition Numerical Unlicensed"',
                   textTransform: isArabic ? "none" : "uppercase",
                 }}
               >
@@ -1106,7 +1106,7 @@ const Search: React.FC = () => {
                   style={{
                     fontSize: 16,
                     marginBottom: 10,
-                    fontFamily: "OT Neue Montreal",
+                    fontFamily: "Edition Numerical Unlicensed1",
                   }}
                 >
                   {item[0]}
@@ -1133,7 +1133,7 @@ const Search: React.FC = () => {
                 style={{
                   fontSize: 16,
                   marginBottom: 12,
-                  fontFamily: "OT Neue Montreal",
+                  fontFamily: "Edition Numerical Unlicensed1",
                 }}
               >
                 {isArabic ? "سيرة ذاتية" : "BIOGRAPHY:"}
@@ -1157,7 +1157,7 @@ const Search: React.FC = () => {
                 style={{
                   fontSize: 16,
                   marginBottom: 12,
-                  fontFamily: "OT Neue Montreal",
+                  fontFamily: "Edition Numerical Unlicensed1",
                 }}
               >
                 {isArabic ? "تواصل" : "CONTACT INFO:"}

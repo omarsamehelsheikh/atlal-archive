@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
 import axios from "axios";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
@@ -21,9 +22,29 @@ const Home: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
 
+  const animationRef = useRef<number>();
+
+  const [time, setTime] = useState(0);
+
+  useEffect(() => {
+    const animate = () => {
+      setTime(Date.now() * 0.001);
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
   // COLORS
 
-  const bgColor = isArabic ? "#000000" : "#ECECEC";
+ const bgColor = isArabic ? "#000000" : "#FFFFFF";
 
   const textColor = isArabic ? "#F5F5F5" : "#111111";
 
@@ -32,8 +53,6 @@ const Home: React.FC = () => {
   const cardBg = isArabic ? "#111111" : "#FFFFFF";
 
   const accentColor = isArabic ? "#A970FF" : "#7B3FF2";
-
-  
 
   // ARABIC ARTIST NAMES
 
@@ -137,11 +156,19 @@ const Home: React.FC = () => {
     "Yto Barrada": "إيتو برادة",
 
     "Zineb Sedira": "زينب سديرة",
-    "Nasa4Nasa (Noura Seif Hassanein/ Salma Abdel Salam)" : "ناسا فور ناسا (نورا سيف حسانين / سلمي عبدالسلام)",
-    "Yasmine Nasser Diaz":"ياسمين ناصر دياز",
-    "Joana & Khalil":"جوانا و خليل",
-    "Jannane Al-Ani":"جنان الأني ",
-    "Faraj Suleiman/ Majd Kayyal":"فراج سليمان / مجد كيال",
+    "Nasa4Nasa (Noura Seif Hassanein/ Salma Abdel Salam)":
+      "ناسا فور ناسا (نورا سيف حسانين / سلمي عبدالسلام)",
+    "Yasmine Nasser Diaz": "ياسمين ناصر دياز",
+    "Joana & Khalil": "جوانا و خليل",
+    "Jannane Al-Ani": "جنان الأني ",
+    "Faraj Suleiman/ Majd Kayyal": "فراج سليمان / مجد كيال",
+    "Akram Zaatari": "أكرم زعتري",
+    "Ghada Amer": "غادة عامر",
+    "Kader Attia": "قادر عطيه",
+    "Lara Baladi": "لارا بلدي",
+    "Yazan Khalili": "يزن خليلي",
+    "Tanya Habjouqa": "تانيا هبجوكة ",
+    "Rania Stephan": "رانيا ستيفان",
   };
 
   // IMAGE VALIDATION
@@ -184,28 +211,25 @@ const Home: React.FC = () => {
 
   // GROUPING
 
-const alphabeticalArtists = useMemo(() => {
-  const grouped: Record<string, any[]> = {};
+  const alphabeticalArtists = useMemo(() => {
+    const grouped: Record<string, any[]> = {};
 
-  artists.forEach((artist) => {
-    const artistName = isArabic
-      ? arabicArtistNames[
-          artist.Full_Name?.trim()
-        ] || artist.Full_Name
-      : artist.Full_Name;
+    artists.forEach((artist) => {
+      const artistName = isArabic
+        ? arabicArtistNames[artist.Full_Name?.trim()] || artist.Full_Name
+        : artist.Full_Name;
 
-    const firstLetter =
-      artistName?.charAt(0).toUpperCase() || "#";
+      const firstLetter = artistName?.charAt(0).toUpperCase() || "#";
 
-    if (!grouped[firstLetter]) {
-      grouped[firstLetter] = [];
-    }
+      if (!grouped[firstLetter]) {
+        grouped[firstLetter] = [];
+      }
 
-    grouped[firstLetter].push(artist);
-  });
+      grouped[firstLetter].push(artist);
+    });
 
-  return grouped;
-}, [artists, isArabic]);
+    return grouped;
+  }, [artists, isArabic]);
 
   // IMAGE SIZES
 
@@ -394,12 +418,23 @@ const alphabeticalArtists = useMemo(() => {
                     onMouseLeave={() => setHoveredNode(null)}
                     style={{
                       position: "absolute",
-                      left: position.left,
-                      top: position.top,
+
+                      left: position.left + Math.sin(time + index) * 12,
+
+                      top: position.top + Math.cos(time + index * 1.5) * 10,
+
                       width: size.width,
+
                       height: size.height,
+
                       cursor: "pointer",
+
                       transition: "0.35s ease",
+
+                      transform: `
+    translateY(${Math.sin(time * 2 + index) * 4}px)
+    scale(${hoveredNode?._id === artist._id ? 1.08 : 1})
+  `,
                     }}
                   >
                     <img
@@ -410,6 +445,18 @@ const alphabeticalArtists = useMemo(() => {
                         height: "100%",
                         objectFit: "cover",
                         display: "block",
+
+                        boxShadow:
+                          hoveredNode?._id === artist._id
+                            ? "0 0 35px rgba(123,63,242,0.7)"
+                            : "0 0 15px rgba(255,255,255,0.08)",
+
+                        transition: "0.5s ease",
+
+                        filter:
+                          hoveredNode?._id === artist._id
+                            ? "brightness(1.12)"
+                            : "brightness(0.92)",
                       }}
                     />
                   </div>
@@ -490,7 +537,7 @@ const alphabeticalArtists = useMemo(() => {
                         style={{
                           cursor: "pointer",
                           fontSize: 12,
-                          fontFamily: "TWK Lausanne",
+                          fontFamily: '"Edition Numerical Unlicensed1"',
                           opacity: 0.75,
                         }}
                       >
@@ -510,71 +557,47 @@ const alphabeticalArtists = useMemo(() => {
       {/* HOVER */}
 
       {hoveredNode && !selectedArtist && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 30,
-            left: isArabic ? "auto" : 30,
-            right: isArabic ? 30 : "auto",
-            background: isArabic
-              ? "rgba(15,15,15,0.97)"
-              : "rgba(255,255,255,0.97)",
-            color: textColor,
-            border: `1px solid ${borderColor}`,
-            padding: "18px 22px",
-            zIndex: 999999,
-            minWidth: 240,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              marginBottom: 10,
-              fontFamily: "OT Neue Montreal",
-            }}
-          >
-            {isArabic
-              ? arabicArtistNames[hoveredNode.Full_Name?.trim()] ||
-                hoveredNode.Full_Name
-              : hoveredNode.Full_Name}
-          </div>
+  <div
+    style={{
+      position: "fixed",
+      bottom: 30,
+      left: isArabic ? "auto" : 30,
+      right: isArabic ? 30 : "auto",
 
-          <div
-            style={{
-              fontSize: 11,
-              opacity: 0.7,
-              lineHeight: 1.8,
-              fontFamily: "TWK Lausanne",
-            }}
-          >
-            <div>
-              {isArabic ? "الميلاد: " : "BORN: "}
-              {hoveredNode.Birth_Year || "—"}
-            </div>
+      background: isArabic
+        ? "rgba(15,15,15,0.97)"
+        : "rgba(255,255,255,0.97)",
 
-            <div>
-              {isArabic ? "الموقع: " : "BASED: "}
-              {isArabic
-                ? hoveredNode.Current_City_In_Arabic ||
-                  hoveredNode.Current_City ||
-                  "—"
-                : hoveredNode.Current_City || "—"}
-            </div>
+      color: textColor,
 
-            <div>
-              {isArabic ? "الممارسة: " : "PRACTICE: "}
+      border: `1px solid ${borderColor}`,
 
-              {isArabic
-                ? hoveredNode.Artistic_Practices_In_Arabic?.split("\n")[0] ||
-                  hoveredNode.Artistic_Practices?.split("\n")[0] ||
-                  "فنون بصرية"
-                : hoveredNode.Artistic_Practices?.split("\n")[0] ||
-                  "Visual Arts"}
-            </div>
-          </div>
-        </div>
-      )}
+      padding: "18px 22px",
+
+      zIndex: 999999,
+    }}
+  >
+    <div
+      style={{
+        fontSize: 20,
+
+        fontWeight: 600,
+
+        fontFamily: '"Edition Numerical Unlicensed1"',
+
+        textTransform: isArabic
+          ? "none"
+          : "uppercase",
+      }}
+    >
+      {isArabic
+        ? arabicArtistNames[
+            hoveredNode.Full_Name?.trim()
+          ] || hoveredNode.Full_Name
+        : hoveredNode.Full_Name}
+    </div>
+  </div>
+)}
 
       {/* DETAILS */}
 
@@ -739,12 +762,16 @@ const alphabeticalArtists = useMemo(() => {
                 >
                   {isArabic ? "٢٠" : ">AR20"}
                 </div> */}
-
                 <div
                   style={{
                     fontSize: 34,
-                    fontFamily: "OT Neue Montreal",
+                    fontFamily: '"Edition Numerical Unlicensed"',
+                    fontWeight: 900,
+                    backgroundColor: isArabic ? "#FFFFFF" : "#000000",
+                    color: isArabic ? "#000000" : "#FFFFFF",
                     textTransform: isArabic ? "none" : "uppercase",
+                    padding: "8px 14px",
+                    display: "inline-block",
                   }}
                 >
                   {isArabic
@@ -804,7 +831,8 @@ const alphabeticalArtists = useMemo(() => {
                     style={{
                       fontSize: 16,
                       marginBottom: 10,
-                      fontFamily: "OT Neue Montreal",
+                      fontFamily: "Edition Numerical Unlicensed1",
+                      fontWeight: 700,
                     }}
                   >
                     {item[0]}
@@ -815,7 +843,7 @@ const alphabeticalArtists = useMemo(() => {
                       fontSize: 12,
                       lineHeight: 2,
                       opacity: 0.85,
-                      fontFamily: "TWK Lausanne",
+                      fontFamily: '"Edition Numerical Unlicensed1"',
                     }}
                   >
                     {item[1] || "—"}
@@ -835,7 +863,8 @@ const alphabeticalArtists = useMemo(() => {
                   style={{
                     fontSize: 16,
                     marginBottom: 12,
-                    fontFamily: "OT Neue Montreal",
+                    fontFamily: "Edition Numerical Unlicensed1",
+                    fontWeight: 700,
                   }}
                 >
                   {isArabic ? "سيرة ذاتية" : "BIOGRAPHY:"}
@@ -846,7 +875,7 @@ const alphabeticalArtists = useMemo(() => {
                     fontSize: 12,
                     lineHeight: 2,
                     opacity: 0.85,
-                    fontFamily: "TWK Lausanne",
+                    fontFamily: '"Edition Numerical Unlicensed1"',
                   }}
                 >
                   {isArabic
@@ -867,7 +896,8 @@ const alphabeticalArtists = useMemo(() => {
                   style={{
                     fontSize: 16,
                     marginBottom: 12,
-                    fontFamily: "OT Neue Montreal",
+                    fontFamily: "Edition Numerical Unlicensed1",
+                    fontWeight: 700,
                   }}
                 >
                   {isArabic ? "تواصل" : "CONTACT INFO:"}
@@ -900,7 +930,7 @@ const alphabeticalArtists = useMemo(() => {
               style={{
                 fontSize: 72,
                 color: accentColor,
-                fontFamily: "OT Neue Montreal",
+                fontFamily: "Edition Numerical Unlicensed1",
                 margin: 0,
               }}
             >

@@ -10,6 +10,10 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const openSearch = () => {
+    navigate("/search");
+  };
+
   const isHome = location.pathname === "/";
 
   const toggleLanguage = (lang: "ENG" | "AR") => {
@@ -24,15 +28,11 @@ const Navbar: React.FC = () => {
 
         height: isHome ? "110px" : "82px",
 
-        background:
-          language === "AR"
-            ? "#000"
-            : "#fff",
+        background: language === "AR" ? "#000" : "#fff",
 
-        borderBottom:
-          isHome
-            ? "none"
-            : language === "AR"
+        borderBottom: isHome
+          ? "none"
+          : language === "AR"
             ? "1px solid #333"
             : "1px solid #000",
       }}
@@ -42,10 +42,7 @@ const Navbar: React.FC = () => {
         <div
           style={{
             ...styles.container,
-            flexDirection:
-              language === "ENG"
-                ? "row"
-                : "row-reverse",
+            flexDirection: language === "ENG" ? "row" : "row-reverse",
           }}
         >
           {/* SEARCH + LANGUAGE */}
@@ -56,55 +53,62 @@ const Navbar: React.FC = () => {
             }}
           >
             {/* SEARCH */}
-            <Link
-              to="/search"
-              style={styles.searchButton}
+            <div
+              onClick={openSearch}
+              style={{
+                ...styles.searchButton,
+                cursor: "pointer",
+              }}
             >
               <div
                 style={{
                   ...styles.searchBg,
 
-                  background:
-                    language === "AR"
-                      ? "#111"
-                      : "#D9D9D9",
+                  background: language === "AR" ? "#111" : "#D9D9D9",
 
-                  border:
-                    language === "AR"
-                      ? "1px solid #333"
-                      : "none",
+                  border: language === "AR" ? "1px solid #333" : "none",
                 }}
               >
-                <div
-                  style={{
-                    ...styles.searchIcon,
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="11"
+                    cy="11"
+                    r="7"
+                    fill="none"
+                    stroke={language === "AR" ? "#FFFFFF" : "#8A38F5"}
+                    strokeWidth="2"
+                  />
 
-                    border:
-                      language === "AR"
-                        ? "2px solid #fff"
-                        : "2px solid #1E1E1E",
-                  }}
-                />
+                  <line
+                    x1="16.2"
+                    y1="16.2"
+                    x2="22"
+                    y2="22"
+                    stroke={language === "AR" ? "#FFFFFF" : "#8A38F5"}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
 
                 <span
                   style={{
                     ...styles.searchText,
 
-                    color:
-                      language === "AR"
-                        ? "#fff"
-                        : "#000",
+                    color: language === "AR" ? "#fff" : "#000",
 
-                    fontFamily:
-                      "PP Neue Montreal",
+                    fontFamily: "PP Neue Montreal",
                   }}
                 >
-                  {language === "ENG"
-                    ? "SEARCH"
-                    : "بحث"}
+                  {language === "ENG" ? "SEARCH" : "بحث"}
                 </span>
               </div>
-            </Link>
+            </div>
 
             {/* LANGUAGE */}
             <div
@@ -116,48 +120,29 @@ const Navbar: React.FC = () => {
                 style={{
                   ...styles.langToggle,
 
-                  background:
-                    language === "AR"
-                      ? "#111"
-                      : "#fff",
+                  background: language === "AR" ? "#111" : "#fff",
 
                   border:
-                    language === "AR"
-                      ? "1px solid #555"
-                      : "1px solid #000",
+                    language === "AR" ? "1px solid #555" : "1px solid #000",
 
-                  color:
-                    language === "AR"
-                      ? "#fff"
-                      : "#000",
+                  color: language === "AR" ? "#fff" : "#000",
                 }}
-                onClick={() =>
-                  setShowDropdown(
-                    !showDropdown
-                  )
-                }
+                onClick={() => setShowDropdown(!showDropdown)}
               >
                 <span
                   style={{
-                    fontFamily:
-                      "PP Neue Montreal",
+                    fontFamily: "PP Neue Montreal",
 
                     fontSize: "18px",
 
                     fontWeight: 600,
 
-                    letterSpacing:
-                      "0.08em",
+                    letterSpacing: "0.08em",
 
-                    color:
-                      language === "AR"
-                        ? "#fff"
-                        : "#000",
+                    color: language === "AR" ? "#fff" : "#000",
                   }}
                 >
-                  {language === "ENG"
-                    ? "ENG"
-                    : "AR"}
+                  {language === "ENG" ? "ENG" : "AR"}
                 </span>
 
                 <div
@@ -181,41 +166,26 @@ const Navbar: React.FC = () => {
                   style={{
                     ...styles.dropdown,
 
-                    background:
-                      language === "AR"
-                        ? "#111"
-                        : "#fff",
+                    background: language === "AR" ? "#111" : "#fff",
 
                     border:
-                      language === "AR"
-                        ? "1px solid #444"
-                        : "1px solid #ddd",
+                      language === "AR" ? "1px solid #444" : "1px solid #ddd",
                   }}
                 >
                   <div
                     style={{
                       ...styles.dropdownItem,
 
-                      color:
-                        language === "AR"
-                          ? "#fff"
-                          : "#000",
+                      color: language === "AR" ? "#fff" : "#000",
 
                       background:
-                        language === "ENG"
-                          ? "#8A38F5"
-                          : "transparent",
+                        language === "ENG" ? "#8A38F5" : "transparent",
 
-                      fontFamily:
-                        "PP Neue Montreal",
+                      fontFamily: "PP Neue Montreal",
 
                       fontWeight: 600,
                     }}
-                    onClick={() =>
-                      toggleLanguage(
-                        "ENG"
-                      )
-                    }
+                    onClick={() => toggleLanguage("ENG")}
                   >
                     ENG
                   </div>
@@ -224,26 +194,15 @@ const Navbar: React.FC = () => {
                     style={{
                       ...styles.dropdownItem,
 
-                      color:
-                        language === "AR"
-                          ? "#fff"
-                          : "#000",
+                      color: language === "AR" ? "#fff" : "#000",
 
-                      background:
-                        language === "AR"
-                          ? "#8A38F5"
-                          : "transparent",
+                      background: language === "AR" ? "#8A38F5" : "transparent",
 
-                      fontFamily:
-                        "PP Neue Montreal",
+                      fontFamily: "PP Neue Montreal",
 
                       fontWeight: 600,
                     }}
-                    onClick={() =>
-                      toggleLanguage(
-                        "AR"
-                      )
-                    }
+                    onClick={() => toggleLanguage("AR")}
                   >
                     AR
                   </div>
@@ -263,9 +222,7 @@ const Navbar: React.FC = () => {
                   height: "61.63px",
 
                   filter:
-                    language === "AR"
-                      ? "brightness(0) invert(1)"
-                      : "none",
+                    language === "AR" ? "brightness(0) invert(1)" : "none",
                 }}
               />
             </Link>
@@ -283,15 +240,10 @@ const Navbar: React.FC = () => {
               style={{
                 ...styles.navLink,
 
-                color:
-                  language === "AR"
-                    ? "#fff"
-                    : "#000",
+                color: language === "AR" ? "#fff" : "#000",
               }}
             >
-              {language === "ENG"
-                ? "LIBRARY"
-                : "منشورات"}
+              {language === "ENG" ? "LIBRARY" : "منشورات"}
             </Link>
 
             <Link
@@ -299,15 +251,10 @@ const Navbar: React.FC = () => {
               style={{
                 ...styles.navLink,
 
-                color:
-                  language === "AR"
-                    ? "#fff"
-                    : "#000",
+                color: language === "AR" ? "#fff" : "#000",
               }}
             >
-              {language === "ENG"
-                ? "MANIFESTO"
-                : "بيان"}
+              {language === "ENG" ? "MANIFESTO" : "بيان"}
             </Link>
 
             <Link
@@ -315,15 +262,10 @@ const Navbar: React.FC = () => {
               style={{
                 ...styles.navLink,
 
-                color:
-                  language === "AR"
-                    ? "#fff"
-                    : "#000",
+                color: language === "AR" ? "#fff" : "#000",
               }}
             >
-              {language === "ENG"
-                ? "ABOUT"
-                : "عن اطلال"}
+              {language === "ENG" ? "ABOUT" : "عن اطلال"}
             </Link>
           </div>
         </div>
@@ -334,25 +276,17 @@ const Navbar: React.FC = () => {
           style={{
             ...styles.innerNavbarContainer,
 
-            background:
-              language === "AR"
-                ? "#000"
-                : "#fff",
+            background: language === "AR" ? "#000" : "#fff",
           }}
         >
           {/* LEFT */}
           <div style={styles.leftSection}>
             <button
-              onClick={() =>
-                navigate("/")
-              }
+              onClick={() => navigate(-1)}
               style={{
                 ...styles.backButton,
 
-                color:
-                  language === "AR"
-                    ? "#fff"
-                    : "#000",
+                color: language === "AR" ? "#fff" : "#000",
               }}
             >
               ←
@@ -366,9 +300,7 @@ const Navbar: React.FC = () => {
                   ...styles.innerLogo,
 
                   filter:
-                    language === "AR"
-                      ? "brightness(0) invert(1)"
-                      : "none",
+                    language === "AR" ? "brightness(0) invert(1)" : "none",
                 }}
               />
             </Link>
@@ -381,15 +313,10 @@ const Navbar: React.FC = () => {
               style={{
                 ...styles.innerNavLink,
 
-                color:
-                  language === "AR"
-                    ? "#fff"
-                    : "#000",
+                color: language === "AR" ? "#fff" : "#000",
               }}
             >
-              {language === "ENG"
-                ? "LIBRARY"
-                : "منشورات"}
+              {language === "ENG" ? "LIBRARY" : "منشورات"}
             </Link>
 
             <Link
@@ -397,15 +324,10 @@ const Navbar: React.FC = () => {
               style={{
                 ...styles.innerNavLink,
 
-                color:
-                  language === "AR"
-                    ? "#fff"
-                    : "#000",
+                color: language === "AR" ? "#fff" : "#000",
               }}
             >
-              {language === "ENG"
-                ? "MANIFESTO"
-                : "بيان"}
+              {language === "ENG" ? "MANIFESTO" : "بيان"}
             </Link>
 
             <Link
@@ -413,15 +335,10 @@ const Navbar: React.FC = () => {
               style={{
                 ...styles.innerNavLink,
 
-                color:
-                  language === "AR"
-                    ? "#fff"
-                    : "#000",
+                color: language === "AR" ? "#fff" : "#000",
               }}
             >
-              {language === "ENG"
-                ? "ABOUT"
-                : "عن أطلال"}
+              {language === "ENG" ? "ABOUT" : "عن أطلال"}
             </Link>
           </div>
 
@@ -429,49 +346,52 @@ const Navbar: React.FC = () => {
           <Link
             to="/search"
             style={{
-              textDecoration:
-                "none",
+              textDecoration: "none",
             }}
           >
             <div
               style={{
                 ...styles.innerSearchBg,
 
-                background:
-                  language === "AR"
-                    ? "#111"
-                    : "#D9D9D9",
+                background: language === "AR" ? "#111" : "#D9D9D9",
 
-                border:
-                  language === "AR"
-                    ? "1px solid #333"
-                    : "none",
+                border: language === "AR" ? "1px solid #333" : "none",
               }}
             >
-              <div
-                style={{
-                  ...styles.innerSearchIcon,
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                  stroke={language === "AR" ? "#FFFFFF" : "#8A38F5"}
+                  strokeWidth="2"
+                />
 
-                  border:
-                    language === "AR"
-                      ? "2px solid #fff"
-                      : "2px solid #8A38F5",
-                }}
-              />
+                <line
+                  x1="16.2"
+                  y1="16.2"
+                  x2="22"
+                  y2="22"
+                  stroke={language === "AR" ? "#FFFFFF" : "#8A38F5"}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
 
               <span
                 style={{
                   ...styles.innerSearchText,
 
-                  color:
-                    language === "AR"
-                      ? "#fff"
-                      : "#5C5C5C",
+                  color: language === "AR" ? "#fff" : "#5C5C5C",
                 }}
               >
-                {language === "ENG"
-                  ? "SEARCH"
-                  : "بحث"}
+                {language === "ENG" ? "SEARCH" : "بحث"}
               </span>
             </div>
           </Link>
@@ -481,10 +401,7 @@ const Navbar: React.FC = () => {
   );
 };
 
-const styles: Record<
-  string,
-  React.CSSProperties
-> = {
+const styles: Record<string, React.CSSProperties> = {
   navWrapper: {
     position: "fixed",
     top: 0,
@@ -500,8 +417,7 @@ const styles: Record<
     padding: "0 50px",
     display: "flex",
     alignItems: "center",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
     position: "relative",
   },
 
@@ -543,8 +459,7 @@ const styles: Record<
     borderRadius: "20px",
     display: "flex",
     alignItems: "center",
-    justifyContent:
-      "center",
+    justifyContent: "center",
     gap: "8px",
     cursor: "pointer",
   },
@@ -560,16 +475,14 @@ const styles: Record<
   centerLogo: {
     position: "absolute",
     left: "50%",
-    transform:
-      "translateX(-50%)",
+    transform: "translateX(-50%)",
   },
 
   navLink: {
     textDecoration: "none",
     fontSize: "24px",
     fontWeight: "500",
-    fontFamily:
-      "PP Neue Montreal",
+    fontFamily: "PP Neue Montreal",
   },
 
   dropdown: {
@@ -593,8 +506,7 @@ const styles: Record<
     height: "100%",
     display: "flex",
     alignItems: "center",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
     padding: "0 24px",
     position: "relative",
   },
@@ -625,25 +537,32 @@ const styles: Record<
   centerLinks: {
     position: "absolute",
     left: "50%",
-    transform:
-      "translateX(-50%)",
+    transform: "translateX(-50%)",
     display: "flex",
     alignItems: "center",
     gap: "46px",
   },
 
-  innerNavLink: {
-    textDecoration: "none",
-    fontFamily:
-      "TWK Lausanne",
-    fontSize: "18px",
-    fontWeight: 400,
-    textTransform:
-      "uppercase",
-  },
+ innerNavLink: {
+  textDecoration: "none",
+
+  fontFamily: "PP Neue Montreal",
+
+  fontWeight: 500,
+
+  fontSize: "24px",
+
+  lineHeight: "100%",
+
+  letterSpacing: "0%",
+
+  textAlign: "center",
+
+  textTransform: "uppercase",
+},
 
   innerSearchBg: {
-    width: "166px",
+    width: "166px", 
     height: "32px",
     borderRadius: "40px",
     display: "flex",
@@ -659,12 +578,10 @@ const styles: Record<
   },
 
   innerSearchText: {
-    fontFamily:
-      "TWK Lausanne",
+    fontFamily: "TWK Lausanne",
     fontSize: "16px",
     fontWeight: 400,
-    textTransform:
-      "uppercase",
+    textTransform: "uppercase",
   },
 };
 

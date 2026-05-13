@@ -109,7 +109,7 @@ const About: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get("/api/books")
+      .get("http://54.174.102.52:5000/api/books")
       .then((res) => {
         const bookData = res.data.data?.[0] || res.data?.[0];
         const pages = [
@@ -143,7 +143,7 @@ const About: React.FC = () => {
     >
       <Navbar />
 
-      {/* <div
+      <div
         style={{
           position: "fixed",
           inset: 0,
@@ -156,7 +156,7 @@ const About: React.FC = () => {
           transition: "opacity 0.6s ease",
           pointerEvents: "none",
         }}
-      /> */}
+      />
 
       <AnimatePresence>
         {isBookOpen && (

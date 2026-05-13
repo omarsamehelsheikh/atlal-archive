@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import Navbar from '../components/Navbar';
-import { useLanguage } from '../context/LanguageContext';
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import Navbar from "../components/Navbar";
+import { useLanguage } from "../context/LanguageContext";
+
+const FONT = `'Edition Numerical Unlicensed'`;
 
 interface Artist {
   _id: string;
   Full_Name: string;
-  Cloudinary_Image1: string; // Background portrait
+  Cloudinary_Image1: string;
   Birth_Year?: string;
   Current_City?: string;
   Email?: string;
@@ -15,6 +17,8 @@ interface Artist {
   Bio_In_Arabic?: string;
   Undergraduate_Degree?: string;
   Artistic_Practices?: string;
+  Artist_Code?: string;
+  Fields?: string;
 }
 
 interface Artwork {
@@ -23,18 +27,230 @@ interface Artwork {
   Cloudinary_Image1: string;
 }
 
+/* ── Purple corner bracket SVG overlay ── */
+const CornerBrackets: React.FC<{ size?: number }> = ({ size = 18 }) => {
+  const s = size;
+  const stroke = "#8B5CF6";
+  const sw = 2;
+  return (
+    <svg
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: 10,
+      }}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* top-left */}
+      <polyline
+        points={`${s},0 0,0 0,${s}`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={sw}
+      />
+      {/* top-right */}
+      <polyline
+        points={`calc(100% - ${s}),0 100%,0 100%,${s}`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={sw}
+        style={{ transform: "none" }}
+      />
+      {/* bottom-left */}
+      <polyline
+        points={`0,calc(100% - ${s}) 0,100% ${s},100%`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={sw}
+      />
+      {/* bottom-right */}
+      <polyline
+        points={`calc(100% - ${s}),100% 100%,100% 100%,calc(100% - ${s})`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={sw}
+      />
+    </svg>
+  );
+};
+
+/* Use absolute pixel corners instead — SVG % in polyline points doesn't work */
+const BracketOverlay: React.FC = () => {
+  const c = "#8B5CF6";
+  const len = 22;
+  const sw = 2.5;
+  return (
+    <svg
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: 10,
+        overflow: "visible",
+      }}
+      preserveAspectRatio="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* top-left */}
+      <line
+        x1={len}
+        y1={0}
+        x2={0}
+        y2={0}
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      <line
+        x1={0}
+        y1={0}
+        x2={0}
+        y2={len}
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      {/* top-right */}
+      <line
+        x1="100%"
+        y1={0}
+        x2="100%"
+        y2={len}
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      <line
+        x1={`calc(100% - ${len}px)`}
+        y1={0}
+        x2="100%"
+        y2={0}
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      {/* bottom-left */}
+      <line
+        x1={0}
+        y1={`calc(100% - ${len}px)`}
+        x2={0}
+        y2="100%"
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      <line
+        x1={0}
+        y1="100%"
+        x2={len}
+        y2="100%"
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      {/* bottom-right */}
+      <line
+        x1="100%"
+        y1={`calc(100% - ${len}px)`}
+        x2="100%"
+        y2="100%"
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      <line
+        x1={`calc(100% - ${len}px)`}
+        y1="100%"
+        x2="100%"
+        y2="100%"
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      {/* mid-left */}
+      <line
+        x1={0}
+        y1="50%"
+        x2={len / 2}
+        y2="50%"
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+      {/* mid-right */}
+      <line
+        x1="100%"
+        y1="50%"
+        x2={`calc(100% - ${len / 2}px)`}
+        y2="50%"
+        stroke={c}
+        strokeWidth={sw}
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+};
+
+/* ── Info row ── */
+const InfoRow: React.FC<{ label: string; value: string; isBio?: boolean }> = ({
+  label,
+  value,
+  isBio,
+}) => (
+  <div
+    style={{
+      borderBottom: "1px solid #777",
+      padding: "14px 20px",
+    }}
+  >
+    <div
+      style={{
+        fontFamily: FONT,
+        fontSize: "14px",
+        letterSpacing: "1.5px",
+        textTransform: "uppercase",
+        textDecoration: "underline",
+        color: "#000",
+        marginBottom: "8px",
+      }}
+    >
+      {label}
+    </div>
+    <div
+      style={{
+        fontFamily: FONT,
+        fontSize: "12px",
+        letterSpacing: "1.2px",
+        lineHeight: isBio ? "20px" : "18px",
+        textTransform: "uppercase",
+        color: "#4A4A4A",
+        whiteSpace: "pre-wrap",
+      }}
+    >
+      {value}
+    </div>
+  </div>
+);
+
+/* ── Main ── */
 const ArtistProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
+  const isArabic = language === "AR";
   const [artist, setArtist] = useState<Artist | null>(null);
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchArtist = axios.get(`http://54.174.102.52:5000/api/artists/${id}`);
-    const fetchArtworks = axios.get(`http://54.174.102.52:5000/api/artworks?artist=${id}`);
-
-    Promise.all([fetchArtist, fetchArtworks])
+    Promise.all([
+      axios.get(`http://54.174.102.52:5000/api/artists/${id}`),
+      axios.get(`http://54.174.102.52:5000/api/artworks?artist=${id}`),
+    ])
       .then(([artistRes, artRes]) => {
         setArtist(artistRes.data.data);
         setArtworks(artRes.data.data || []);
@@ -43,105 +259,267 @@ const ArtistProfile: React.FC = () => {
       .catch(() => setLoading(false));
   }, [id]);
 
-  if (loading || !artist) return <div style={{padding: '100px', textAlign: 'center'}}>LOADING...</div>;
+  if (loading || !artist) {
+    return (
+      <div style={{ padding: "200px", textAlign: "center", fontFamily: FONT }}>
+        LOADING...
+      </div>
+    );
+  }
+
+  const bio = isArabic
+    ? artist.Bio_In_Arabic || artist.Bio_In_English || "—"
+    : artist.Bio_In_English || "—";
 
   return (
-    <div style={styles.outerContainer}>
+    <div
+      style={{
+        width: "100%",
+        minHeight: "100vh",
+        background: "#ECECEC",
+        overflowX: "hidden",
+        fontFamily: FONT,
+        direction: isArabic ? "rtl" : "ltr",
+      }}
+    >
       <Navbar />
 
-      {/* --- BACKGROUND PORTRAIT --- */}
-      <img src={artist.Cloudinary_Image1} style={styles.bgImage} alt="" />
-
-      {/* --- SCATTERED ARTWORKS (Mapped to your exact Design Coordinates) --- */}
-      {artworks.map((art, i) => {
-        const pos = scatteredPositions[i % scatteredPositions.length];
-        return (
-          <div key={art._id} style={{ ...styles.scatteredItem, left: pos.x, top: pos.y }}>
-            <img src={art.Cloudinary_Image1} style={styles.scatteredImg} alt={art.Title} />
-            <div style={styles.scatteredLabel}>{art.Title}</div>
+      {/* ── MAIN TWO-COLUMN LAYOUT ── */}
+      <div
+        style={{
+          marginTop: "82px",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          borderTop: "1px solid #777",
+          minHeight: "calc(100vh - 82px)",
+        }}
+      >
+        {/* ── LEFT: INFO ── */}
+        <div style={{ borderRight: "1px solid #777" }}>
+          {/* FILE NAME BAR */}
+          <div
+            style={{
+              background: "#000",
+              padding: "8px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              borderBottom: "1px solid #555",
+            }}
+          >
+            <span style={{ color: "#fff", fontSize: "16px", lineHeight: 1 }}>
+              ✕
+            </span>
+            <span
+              style={{
+                fontFamily: FONT,
+                fontSize: "11px",
+                letterSpacing: "1.5px",
+                color: "#fff",
+                textTransform: "uppercase",
+                opacity: 0.85,
+              }}
+            >
+              ATLAL_AR03_{artist.Full_Name.replace(/\s+/g, "_").toUpperCase()}
+              _IMAGE_1.JPG
+            </span>
           </div>
-        );
-      })}
 
-      {/* --- CENTRAL INFO SHEET --- */}
-      <div style={styles.infoSheet}>
-        <div style={styles.nameTitle}>{artist.Full_Name}</div>
+          {/* ARTIST NAME HEADER */}
+          <div
+            style={{
+              background: "#000",
+              padding: "14px 20px 18px",
+              borderBottom: "1px solid #777",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: FONT,
+                fontSize: "38px",
+                color: "#fff",
+                textTransform: "uppercase",
+                letterSpacing: "2px",
+                lineHeight: 1.1,
+              }}
+            >
+              <span style={{ color: "#8B5CF6" }}>&gt;AR20</span>
+              {artist.Full_Name.toUpperCase()}
+            </div>
+          </div>
 
-        <div style={{...styles.label, left: 272, top: 64}}>CONTACT INFO:</div>
-        <div style={{...styles.value, left: 247, top: 92}}>{artist.Email}</div>
+          {/* YEAR OF BIRTH + BASED IN */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              borderBottom: "1px solid #777",
+            }}
+          >
+            <div
+              style={{ padding: "14px 20px", borderRight: "1px solid #777" }}
+            >
+              <div style={labelStyle}>
+                {isArabic ? "سنة الميلاد:" : "YEAR OF BIRTH:"}
+              </div>
+              <div style={valueStyle}>{artist.Birth_Year || "—"}</div>
+            </div>
+            <div style={{ padding: "14px 20px" }}>
+              <div style={labelStyle}>
+                {isArabic ? "الإقامة:" : "BASED IN:"}
+              </div>
+              <div style={valueStyle}>{artist.Current_City || "—"}</div>
+            </div>
+          </div>
 
-        <div style={{...styles.label, left: 23, top: 130}}>YEAR OF BIRTH:</div>
-        <div style={{...styles.value, left: 23, top: 160}}>{artist.Birth_Year}</div>
+          <InfoRow
+            label={isArabic ? "المجال:" : "FIELDS:"}
+            value={artist.Fields || artist.Undergraduate_Degree || "—"}
+          />
 
-        <div style={{...styles.label, left: 573, top: 130}}>BASED IN:</div>
-        <div style={{...styles.value, left: 519, top: 160}}>{artist.Current_City}</div>
+          <InfoRow
+            label={isArabic ? "الممارسات الفنية:" : "ARTISTIC PRACTICES:"}
+            value={
+              artist.Artistic_Practices ||
+              "SCULPTURE, INSTALLATION ART, ARCHITECTURAL MODELLING,\nMEDIA MIXED MEDIA, SOUND"
+            }
+          />
 
-        <div style={{...styles.label, left: 23, top: 179}}>BIOGRAPHY:</div>
-        <div style={styles.bioText}>
-          {language === 'ENG' ? artist.Bio_In_English : artist.Bio_In_Arabic}
+          <InfoRow
+            label={isArabic ? "الدرجة العلمية:" : "DEGREE:"}
+            value={artist.Undergraduate_Degree || "—"}
+          />
+
+          <InfoRow
+            label={isArabic ? "السيرة الذاتية:" : "BIOGRAPGHY:"}
+            value={bio}
+            isBio
+          />
+
+          {/* CONTACT INFO */}
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #777" }}>
+            <div style={labelStyle}>
+              {isArabic ? "البريد الإلكتروني:" : "CONTACT INFO:"}
+            </div>
+            <div
+              style={{
+                fontFamily: FONT,
+                fontSize: "12px",
+                letterSpacing: "1.2px",
+                color: "#8B5CF6",
+                textDecoration: "underline",
+                marginTop: "6px",
+                cursor: "pointer",
+              }}
+            >
+              {artist.Email || "—"}
+            </div>
+          </div>
         </div>
 
-        <div style={{...styles.label, left: 555, top: 179}}>PORTFOLIO:</div>
-        <div style={styles.portfolioList}>
-           {artworks.slice(0, 8).map(a => <div key={a._id}>{a.Title}</div>)}
-        </div>
-
-        <div style={{...styles.label, left: 23, top: 341}}>ARTISTIC PRACTICES:</div>
-        <div style={styles.practiceText}>
-          {artist.Artistic_Practices || "Sculpture\nInstallation Art\nMixed Media"}
-        </div>
-
-        <div style={{...styles.label, left: 591, top: 356}}>FIELDS:</div>
-        <div style={{...styles.value, left: 524, top: 381, textAlign: 'right'}}>{artist.Undergraduate_Degree}</div>
-
-        <div style={{...styles.label, left: 201, top: 444, width: '100%', textAlign: 'center'}}>APPEARANCES IN PUBLICATIONS:</div>
-        <div style={styles.pubRow}>
-            {/* Visual placeholders for publications from design */}
-            {[1,2,3,4,5,6].map(n => <img key={n} src="https://placehold.co/75x104" style={styles.pubImg} alt=""/>)}
+        {/* ── RIGHT: PHOTO ── */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "60px 50px",
+            background: "#ECECEC",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              maxWidth: "500px",
+              aspectRatio: "4/5",
+            }}
+          >
+            <img
+              src={artist.Cloudinary_Image1}
+              alt={artist.Full_Name}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
+                border: "1px solid #aaa",
+              }}
+            />
+            <BracketOverlay />
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ── APPEARANCES IN PUBLICATIONS ── */}
+     {/* ── APPEARANCES IN PUBLICATIONS ── */}
+<div
+  style={{
+    borderTop: '1px solid #777',
+    padding: '50px 60px',
+    background: '#ECECEC',
+  }}
+>
+  <div
+    style={{
+      fontFamily: FONT,
+      fontSize: '36px',
+      color: '#8B5CF6',
+      textTransform: 'uppercase',
+      letterSpacing: '3px',
+      textAlign: 'center',
+      marginBottom: '40px',
+    }}
+  >
+    {isArabic ? 'الظهور في المنشورات' : 'APPEARANCES IN PUBLICATIONS'}
+  </div>
+
+  <div
+    style={{
+      display: 'flex',
+      gap: '16px',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+    }}
+  >
+    {[1, 2, 3, 4, 5, 6].map((n) => (
+      <div key={n}>
+        <img
+          src={`/book${n}.png`}
+          alt=""
+          style={{
+            width: '90px',
+            height: '130px',
+            objectFit: 'cover',
+            border: '1px solid #999',
+            display: 'block',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+    ))}
+  </div>
+</div>
+</div>
   );
 };
 
-// --- DATA COORDINATES FROM YOUR DESIGN SNIPPET ---
-const scatteredPositions = [
-  { x: 31.91, y: 523.31 }, { x: 154.19, y: 470.88 }, { x: 141.56, y: 346.08 },
-  { x: 184, y: 176.40 }, { x: 94.28, y: 622.03 }, { x: 21.36, y: 361.85 },
-  { x: 1307.06, y: 466.15 }, { x: 1307.06, y: 638.26 }, { x: 47.86, y: 773.62 },
-  { x: 647.06, y: 765.63 }, { x: 15.13, y: 223.52 }, { x: 1230.06, y: 158.87 }
-];
+const labelStyle: React.CSSProperties = {
+  fontFamily: `'Edition Numerical Unlicensed', 'Courier New', Courier, monospace`,
+  fontSize: "14px",
+  letterSpacing: "1.5px",
+  textTransform: "uppercase",
+  textDecoration: "underline",
+  color: "#000",
+  marginBottom: "6px",
+};
 
-const styles: Record<string, React.CSSProperties> = {
-  outerContainer: { width: '100%', height: '100vh', position: 'relative', background: '#ECECEC', overflow: 'hidden' },
-  bgImage: { width: '1437px', height: '958px', left: 0, top: '-17px', position: 'absolute', mixBlendMode: 'multiply', opacity: 0.7 },
-  infoSheet: { 
-    width: '665.26px', height: '606.84px', left: '387.37px', top: '123.08px', 
-    position: 'absolute', opacity: 0.85, background: 'white', overflow: 'hidden' 
-  },
-  nameTitle: { 
-    width: '100%', top: '7.43px', position: 'absolute', textAlign: 'center', 
-    fontSize: '45.73px', fontFamily: 'OT Neue Montreal', fontWeight: '500', textTransform: 'uppercase' 
-  },
-  label: { position: 'absolute', color: 'black', fontSize: '18px', fontFamily: 'OT Neue Montreal', fontWeight: '600' },
-  value: { position: 'absolute', color: 'black', fontSize: '10px', fontFamily: 'TWK Lausanne', fontWeight: '200', textTransform: 'uppercase' },
-  bioText: { 
-    left: '23.22px', top: '207.72px', position: 'absolute', color: 'black', fontSize: '11px', 
-    fontFamily: 'TWK Lausanne', fontWeight: '200', width: '450px', lineHeight: '1.4' 
-  },
-  practiceText: { 
-    left: '23.22px', top: '366.95px', position: 'absolute', color: 'black', fontSize: '12px', 
-    fontFamily: 'TWK Lausanne', fontWeight: '250', whiteSpace: 'pre-line' 
-  },
-  portfolioList: { 
-    position: 'absolute', right: '23px', top: '204px', textAlign: 'right', 
-    fontSize: '10px', fontFamily: 'TWK Lausanne', fontWeight: '200' 
-  },
-  pubRow: { position: 'absolute', bottom: '25px', width: '100%', display: 'flex', justifyContent: 'center', gap: '10px' },
-  pubImg: { width: '75px', height: '104px' },
-  scatteredItem: { position: 'absolute', zIndex: 5 },
-  scatteredImg: { width: '103.77px', height: '62.73px', border: '1px solid black' },
-  scatteredLabel: { fontSize: '13px', fontFamily: 'TWK Lausanne', fontWeight: '200', textTransform: 'uppercase', marginTop: '5px' }
+const valueStyle: React.CSSProperties = {
+  fontFamily: `'Edition Numerical Unlicensed', 'Courier New', Courier, monospace`,
+  fontSize: "12px",
+  letterSpacing: "1.2px",
+  textTransform: "uppercase",
+  color: "#4A4A4A",
 };
 
 export default ArtistProfile;

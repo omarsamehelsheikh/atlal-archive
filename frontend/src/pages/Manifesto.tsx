@@ -8,6 +8,7 @@ const Manifesto: React.FC = () => {
 
 
   const ACCENT_PURPLE = "#8A38F5";
+  const bgPath = "/image-background-for-about-page.png";
 
   // Helper to convert numbers to Arabic numerals
   const getArabicNumber = (n: number) => {
@@ -85,7 +86,7 @@ const Manifesto: React.FC = () => {
     }}>
       <Navbar />
 
-      {/* <div style={{
+      <div style={{
         position: "absolute",
         inset: 0,
         zIndex: 0,
@@ -94,7 +95,7 @@ const Manifesto: React.FC = () => {
         backgroundPosition: "center",
         opacity: isEng ? 0.12 : 0.05,
         pointerEvents: "none",
-      }} /> */}
+      }} />
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '2300px' }}>
         {MANIFESTO_CONTENT.map((box) => (
