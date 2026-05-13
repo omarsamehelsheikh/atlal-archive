@@ -2,21 +2,19 @@ const ArtworkService = require('../services/ArtworkService');
 
 class ArtworkController {
   // GET /api/artworks
-  async getAll(req, res) {
-    try {
-      const artworks = await ArtworkService.getAllArtworks();
-      // Logic: Consistent wrapper so Frontend can use res.data.data
-      res.status(200).json({ 
-        success: true, 
-        data: artworks 
-      });
-    } catch (err) {
-      res.status(500).json({ 
-        success: false, 
-        message: err.message 
-      });
-    }
+  // GET /api/artworks
+async getAll(req, res) {
+  try {
+    // UPDATED: Added .populate to join Artist and Book data
+    const artworks = await Artwork.find()
+      .populate('artist') 
+      .populate('book'); 
+    
+    res.status(200).json({ success: true, data: artworks });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
+}
 
   // GET /api/artworks/:id
   async getById(req, res) {
