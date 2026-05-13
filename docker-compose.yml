@@ -3,19 +3,28 @@ version: '3.8'
 services:
   backend:
     build: ./backend
+    image: atlal-backend:latest
     container_name: atlal-backend
     restart: always
     env_file:
       - backend/.env
     ports:
-      - "5050:5000"  # Mapping host 5050 to container 5000
+      - "5050:5000"
+    networks:
+      - atlal-network
 
   frontend:
     build: ./frontend
+    image: atlal-frontend:latest
     container_name: atlal-frontend
     restart: always
-    # Removed mem_limit because we are just serving static files now
     ports:
       - "80:80"
     depends_on:
       - backend
+    networks:
+      - atlal-network
+
+networks:
+  atlal-network:
+    driver: bridge
