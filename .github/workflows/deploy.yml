@@ -18,15 +18,10 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Cleanup host port 80
-            sudo systemctl stop nginx || true
-            sudo fuser -k 80/tcp || true 
-
-            # 2. Sync code
             cd ~/atlal-project
             git pull origin main
-
-            # 3. Docker Rebuild (No more OOM errors!)
-            sudo docker-compose up -d --build
-            sudo docker-compose up -d --build
-            sudo docker image prune -f
+            
+            # Use 'docker compose' (SPACE, NO HYPHEN)
+            # Remove --build so it uses cache (making it fast)
+            # Remove 'down' so it doesn't kill your DB
+            sudo docker compose up -d
