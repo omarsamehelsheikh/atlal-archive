@@ -33,16 +33,17 @@ class ArtworkRepository {
    * Updated to explicitly handle Themes and Tags arrays from the mapper.
    */
   async artworkUpsert(data) {
-    if (!data.Artwork_ID) {
-      console.warn("⚠️ Skipping row: Artwork_ID is missing.");
+    // FIX: Check both naming conventions
+    const finalID = data.Artwork_ID || data.ArtworkID;
+
+    if (!finalID) {
+      console.warn("⚠️ Skipping row: Artwork_ID/ArtworkID is missing from data object:", Object.keys(data));
       return null;
     }
 
     try {
-      // We use $set to ensure Themes and Tags (Arrays) are overwritten 
-      // correctly during Excel synchronization.
       return await Artwork.findOneAndUpdate(
-        { Artwork_ID: data.Artwork_ID },
+        { Artwork_ID: finalID }, // Always use the Schema field name for the query
         { $set: data }, 
         { 
           upsert: true, 
@@ -52,11 +53,10 @@ class ArtworkRepository {
         }
       );
     } catch (error) {
-      console.error(`❌ Repository Error for ${data.Artwork_ID}:`, error.message);
-      throw new Error(`Upsert failed for ${data.Artwork_ID}: ${error.message}`);
+      console.error(`❌ Repository Error for ${finalID}:`, error.message);
+      throw new Error(`Upsert failed for ${finalID}: ${error.message}`);
     }
   }
-
   /**
    * Permanent deletion from archive
    */
