@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const API = axios.create({
-  // This tells the browser: "Look for /api on the same domain I am currently on"
-  baseURL: '/api', 
+  // Use your Public IP and the external port 5050
+  baseURL: 'http://54.174.102.52:5050/api', 
 });
 
 export default API;
