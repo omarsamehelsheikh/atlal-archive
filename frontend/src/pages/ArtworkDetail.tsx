@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
-
 import { useParams, useNavigate } from "react-router-dom";
-
-import axios from "axios";
-
+import API from "../services/api"; // Updated import
 import Navbar from "../components/Navbar";
-
 import { useLanguage } from "../context/LanguageContext";
 
 interface Artwork {
@@ -34,6 +30,9 @@ interface Artwork {
   Collection?: string;
 
   Cloudinary_Image1: string;
+  Cloudinary_Images?: string[]; // Synced array
+
+
 
   Cloudinary_Image2?: string;
 
@@ -64,70 +63,32 @@ const ArtworkDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios
-      .get(`/api/artworks/${id}`)
-      .then(async (res) => {
+    API.get(`/artworks/${id}`)
+      .then(async (res: any) => {
         const artworkData = res.data.data;
-
-        artworkData.Themes = ["Memory", "Identity", "Archive"];
-
-        artworkData.Tags = ["black and white", "portrait", "architecture"];
-
         setArtwork(artworkData);
+        
+        // Priority: Use the array from sync, fallback to Image1
+        const initialImg = artworkData.Cloudinary_Images?.[0] || artworkData.Cloudinary_Image1;
+        setSelectedImage(initialImg);
 
-        setSelectedImage(artworkData.Cloudinary_Image1);
-
-        const allArtworksRes = await axios.get(
-          "/api/artworks",
-        );
-
+        const allArtworksRes: any = await API.get("/artworks");
         const allArtworks = allArtworksRes.data.data || [];
-
-        const related = allArtworks
-          .filter(
-            (a: Artwork) =>
-              a.Artist === artworkData.Artist && a._id !== artworkData._id,
-          )
-          .slice(0, 2);
-
+        const related = allArtworks.filter((a: any) => a.Artist === artworkData.Artist && a._id !== artworkData._id).slice(0, 2);
         setRelatedArtworks(related);
-
         setLoading(false);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.error(err);
-
         setLoading(false);
       });
   }, [id]);
 
-  if (loading)
-    return (
-      <div
-        style={{
-          padding: 200,
-          textAlign: "center",
-          fontFamily: "Edition Numerical Unlicensed2",
-        }}
-      >
-        LOADING...
-      </div>
-    );
+  if (loading || !artwork) return <div style={{ padding: 200, textAlign: "center" }}>LOADING...</div>;
 
-  if (!artwork)
-    return (
-      <div
-        style={{
-          padding: 200,
-          textAlign: "center",
-          fontFamily: "Edition Numerical Unlicensed2",
-        }}
-      >
-        NOT FOUND
-      </div>
-    );
-
+  // Group all images found
   const images = [
+    ...(artwork.Cloudinary_Images || []),
     artwork.Cloudinary_Image1,
     artwork.Cloudinary_Image2,
     artwork.Cloudinary_Image3,
@@ -135,6 +96,9 @@ const ArtworkDetail: React.FC = () => {
     artwork.Cloudinary_Image5,
     artwork.Cloudinary_Image6,
   ].filter(Boolean);
+
+  // Remove duplicates
+  const uniqueImages = Array.from(new Set(images));
 
   return (
     <div
@@ -184,29 +148,28 @@ const ArtworkDetail: React.FC = () => {
             </div>
 
             <div
-              onClick={async () => {
-                try {
-                  const res = await axios.get(
-                    "/api/artists",
-                  );
+             onClick={async () => {
+  try {
+    // 1. Use the FIXED instance (API), not raw axios
+    // 2. Remove the extra "/api" prefix
+    const res: any = await API.get("/artists");
 
-                  const artists = res.data.data || [];
+    // 3. Safely unpack
+    const artists = res.data.data || res.data || [];
 
-                  const matchedArtist = artists.find(
-                    (a: any) => a.Full_Name?.trim() === artwork.Artist?.trim(),
-                  );
+    const matchedArtist = artists.find(
+      (a: any) => a.Full_Name?.trim() === artwork.Artist?.trim()
+    );
 
-                  if (matchedArtist) {
-                    navigate("/search", {
-                      state: {
-                        selectedArtist: matchedArtist,
-                      },
-                    });
-                  }
-                } catch (err) {
-                  console.error(err);
-                }
-              }}
+    if (matchedArtist) {
+      navigate("/search", {
+        state: { selectedArtist: matchedArtist },
+      });
+    }
+  } catch (err) {
+    console.error("Navigation error:", err);
+  }
+}}
               style={{
                 color: "#8B5CF6",
                 marginTop: 10,

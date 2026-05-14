@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api"; // Updated import
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -10,6 +10,7 @@ interface Artist {
   _id: string;
   Full_Name: string;
   Cloudinary_Image1: string;
+  Cloudinary_Images?: string[]; // Added array support
   Birth_Year?: string;
   Current_City?: string;
   Email?: string;
@@ -248,15 +249,18 @@ const ArtistProfile: React.FC = () => {
 
   useEffect(() => {
     Promise.all([
-      axios.get(`http://54.174.102.52:5000/api/artists/${id}`),
-      axios.get(`http://54.174.102.52:5000/api/artworks?artist=${id}`),
+      API.get(`/artists/${id}`),
+      API.get(`/artworks?artist=${id}`),
     ])
-      .then(([artistRes, artRes]) => {
+      .then(([artistRes, artRes]: any) => { // Added types
         setArtist(artistRes.data.data);
         setArtworks(artRes.data.data || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err: any) => {
+        console.error(err);
+        setLoading(false);
+      });
   }, [id]);
 
   if (loading || !artist) {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import API from "../services/api"; // Updated import
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -823,23 +823,14 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
     if (!searchQuery.trim()) return;
     setIsLoading(true);
     setHasSearched(true);
-    setSelectedArtist(null);
-    setSelectedArtwork(null);
     const q = searchQuery.toLowerCase().trim();
 
     try {
-      const [artworkRes, artistRes, bookRes] = await Promise.all([
-        axios
-          .get("/artworks")
-          .catch(() => ({ data: { data: [] } })),
-        axios
-          .get("/artists")
-          .catch(() => ({ data: { data: [] } })),
-        axios
-          .get("/books")
-          .catch(() => ({ data: { data: [] } })),
+      const [artworkRes, artistRes, bookRes]: any = await Promise.all([
+        API.get("/artworks").catch(() => ({ data: { data: [] } })),
+        API.get("/artists").catch(() => ({ data: { data: [] } })),
+        API.get("/books").catch(() => ({ data: { data: [] } })),
       ]);
-
       const allArtists = artistRes.data.data || artistRes.data || [];
       const filteredArtists = allArtists.filter((artist: any) =>
         Object.values(artist).some(

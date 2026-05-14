@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import API from "../services/api"; // Updated import
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
@@ -189,9 +189,8 @@ const Library: React.FC = () => {
   const [showArticle, setShowArticle] = useState(false);
 
   useEffect(() => {
-    axios
-      .get("/api/books")
-      .then((res) => {
+   API.get("/books")
+      .then((res: any) => { // Added :any to fix TypeScript error
         const rawData = res.data.data || res.data || [];
         const normalized = rawData.map((b: any, i: number) => {
           const rawTitle = b.Book_Title || b.Title || "Untitled";

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 
 import Navbar from "../components/Navbar";
@@ -98,30 +98,22 @@ const About: React.FC = () => {
   const bgPath = "/image-background-for-about-page.png";
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      setIsScrolledToCredits(scrollY > windowHeight * 1.1);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    axios
-      .get("http://54.174.102.52:5000/api/books")
+    API.get("/books")
       .then((res) => {
         const bookData = res.data.data?.[0] || res.data?.[0];
+        
+        // This covers both the old singular columns and the new array we synced
         const pages = [
+          ...(bookData?.Cloudinary_Images || []), // Check for the new array first
           bookData?.Cloudinary_Image1,
           bookData?.Cloudinary_Image2,
           bookData?.Cloudinary_Image3,
         ].filter(Boolean);
+        
         setBookPages(pages);
       })
       .catch((err) => console.error("Error loading book pages:", err));
   }, []);
-
   const currentAuthors = isArabic ? BOOK_AUTHORS_AR : BOOK_AUTHORS;
   const currentSupervisors = isArabic ? SUPERVISORS_AR : SUPERVISORS;
 

@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Professional approach: 
-// On the server, it calls /api (proxied by Nginx)
-// Locally, it defaults to localhost
+// Force the use of the relative proxy path for the server
 const API = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api',
+  baseURL: '/api', 
 });
+
+// ... keep the rest of the safeGet and AdminService code exactly as is
 
 const safeGet = async (url: string) => {
   try {
@@ -79,3 +79,4 @@ export const AdminService = {
     });
   }
 };
+export default API;
