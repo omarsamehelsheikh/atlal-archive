@@ -102,33 +102,32 @@ export const AdminArtworkForm = () => {
     updateField('Cloudinary_Image_URLs', filtered.length ? filtered : ['']);
   };
 
-  const handleManualSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // Inside handleManualSubmit:
+const handleManualSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
-    // Clean up empty strings and map to correct DB key 'Cloudinary_Images'
-    const finalImages = formData.Cloudinary_Image_URLs.filter((url: string) => url.trim() !== "");
+  const finalImages = formData.Cloudinary_Image_URLs.filter((url: string) => url.trim() !== "");
 
-    const finalData = {
-      ...formData,
-      Cloudinary_Images: finalImages, // FIX: Match schema key
-      Themes: formData.Themes.split(',').map((v: any) => v.trim()).filter((v: any) => v !== ""),
-      Tags: formData.Tags.split(',').map((v: any) => v.trim()).filter((v: any) => v !== "")
-    };
-
-    // Clean up temporary form key
-    delete finalData.Cloudinary_Image_URLs;
-
-    try {
-      await AdminService.upsertArtwork(finalData);
-      toast.success(id ? "Archive Updated" : "Artwork Cataloged");
-      navigate('/admin/artworks');
-    } catch (err) {
-      toast.error("Manual Entry Failed");
-    } finally {
-      setLoading(false);
-    }
+  const finalData = {
+    ...formData,
+    Cloudinary_Images: finalImages, // Map local state to Schema key
+    Themes: formData.Themes.split(',').map((v: any) => v.trim()).filter((v: any) => v !== ""),
+    Tags: formData.Tags.split(',').map((v: any) => v.trim()).filter((v: any) => v !== "")
   };
+
+  delete finalData.Cloudinary_Image_URLs;
+
+  try {
+    await AdminService.upsertArtwork(finalData);
+    toast.success(id ? "Archive Updated" : "Artwork Cataloged");
+    navigate('/admin/artworks');
+  } catch (err) {
+    toast.error("Manual Entry Failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleExcelImport = async () => {
     if (!file) return toast.error("Select Excel file first");
