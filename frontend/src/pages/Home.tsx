@@ -187,7 +187,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get("http://54.174.102.52:5000/api/artists")
+      .get("/artists")
       .then((res) => {
         const artistsData = res.data.data || [];
 

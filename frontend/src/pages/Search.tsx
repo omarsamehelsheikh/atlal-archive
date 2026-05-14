@@ -830,13 +830,13 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
     try {
       const [artworkRes, artistRes, bookRes] = await Promise.all([
         axios
-          .get("http://54.174.102.52:5000/api/artworks")
+          .get("/artworks")
           .catch(() => ({ data: { data: [] } })),
         axios
-          .get("http://54.174.102.52:5000/api/artists")
+          .get("/artists")
           .catch(() => ({ data: { data: [] } })),
         axios
-          .get("http://54.174.102.52:5000/api/books")
+          .get("/books")
           .catch(() => ({ data: { data: [] } })),
       ]);
 
