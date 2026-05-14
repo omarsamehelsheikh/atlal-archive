@@ -40,12 +40,10 @@ export const AdminArtworkForm = () => {
 
   const [formData, setFormData] = useState<any>({
     Artwork_ID: '',
-    Student: '',
     Artist_ID: '',
     Artist_Name: '',
     Title_In_English: '',
     Title_In_Arabic: '',
-    Internal_Place_Holder_Title: '',
     Series_ID: '',
     Year_Created: '',
     Year_Finished: '',
@@ -54,16 +52,13 @@ export const AdminArtworkForm = () => {
     Duration: '',
     Artwork_Description_In_English: '',
     Artwork_Description_In_Arabic: '',
-    Film_Image_Description_In_English: '',
-    Film_Image_Description_In_Arabic: '',
-    Film_Image_Resolution: '',
     Film_Image_URL: '',
-    Film_Image_Source: '',
+    // Use local state name for the inputs
     Cloudinary_Image_URLs: [''], 
     Section_ID: '',
     Section_Title: '',
     Book_ID: '',
-    Status: 'Complete',
+    Status: 'Draft',
     Themes: '', 
     Tags: ''
   });
@@ -78,7 +73,8 @@ export const AdminArtworkForm = () => {
             ...actualData,
             Themes: Array.isArray(actualData.Themes) ? actualData.Themes.join(', ') : '',
             Tags: Array.isArray(actualData.Tags) ? actualData.Tags.join(', ') : '',
-            Cloudinary_Image_URLs: actualData.Cloudinary_Image_URLs?.length > 0 ? actualData.Cloudinary_Image_URLs : ['']
+            // Map the DB 'Cloudinary_Images' back to our form field name
+            Cloudinary_Image_URLs: actualData.Cloudinary_Images?.length > 0 ? actualData.Cloudinary_Images : ['']
           });
         }
       })
@@ -110,12 +106,18 @@ export const AdminArtworkForm = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Clean up empty strings and map to correct DB key 'Cloudinary_Images'
+    const finalImages = formData.Cloudinary_Image_URLs.filter((url: string) => url.trim() !== "");
+
     const finalData = {
       ...formData,
+      Cloudinary_Images: finalImages, // FIX: Match schema key
       Themes: formData.Themes.split(',').map((v: any) => v.trim()).filter((v: any) => v !== ""),
-      Tags: formData.Tags.split(',').map((v: any) => v.trim()).filter((v: any) => v !== ""),
-      Cloudinary_Image_URLs: formData.Cloudinary_Image_URLs.filter((url: string) => url.trim() !== "")
+      Tags: formData.Tags.split(',').map((v: any) => v.trim()).filter((v: any) => v !== "")
     };
+
+    // Clean up temporary form key
+    delete finalData.Cloudinary_Image_URLs;
 
     try {
       await AdminService.upsertArtwork(finalData);
@@ -132,9 +134,8 @@ export const AdminArtworkForm = () => {
     if (!file) return toast.error("Select Excel file first");
     setLoading(true);
     try {
-      // This call handles the backend logic where repeated IDs are grouped
       await AdminService.importData('artwork', file);
-      toast.success("Bulk Artwork Import Success (Duplicates Merged)");
+      toast.success("Bulk Artwork Import Success");
       navigate('/admin/artworks');
     } catch (err: any) {
       toast.error("Excel Import Failed");
@@ -151,8 +152,6 @@ export const AdminArtworkForm = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8 animate-in fade-in duration-700">
-      
-      {/* HEADER & TABS */}
       <div className="flex justify-between items-end">
         <div className="space-y-4">
           <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest hover:text-white transition-colors">
@@ -176,7 +175,6 @@ export const AdminArtworkForm = () => {
         </div>
       </div>
 
-      {/* DEDICATED FAST SYNC ENGINE (Excel Import) */}
       {!id && (
         <div className="bg-primary/5 border border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -281,30 +279,6 @@ export const AdminArtworkForm = () => {
               </button>
             </div>
           </form>
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-[#0f0f0f] p-8 rounded-[2.5rem] border border-white/5 sticky top-6">
-            <h3 className="text-[10px] font-black uppercase italic mb-4 text-primary">Archive Protocol</h3>
-            <ul className="space-y-4">
-              <li className="flex gap-3">
-                <div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" />
-                <p className="text-[9px] text-gray-400 font-bold uppercase leading-relaxed">IDs must match Excel naming conventions for sync compatibility.</p>
-              </li>
-              <li className="flex gap-3">
-                <div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" />
-                <p className="text-[9px] text-gray-400 font-bold uppercase leading-relaxed">Visuals tab supports multi-image arrays for a single record.</p>
-              </li>
-              <li className="flex gap-3">
-                <div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" />
-                <p className="text-[9px] text-gray-400 font-bold uppercase leading-relaxed">Import script handles relational handshake between pieces and artists.</p>
-              </li>
-            </ul>
-            
-            <button className="w-full mt-8 flex items-center justify-center gap-2 border border-white/10 py-3 rounded-xl text-[8px] font-black uppercase tracking-tighter text-gray-500 hover:text-white hover:border-white/20 transition-all">
-              <Download size={12} /> Download Data Template
-            </button>
-          </div>
         </div>
       </div>
     </div>

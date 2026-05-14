@@ -36,7 +36,6 @@ export const AdminArtworks = () => {
     if (!file) return toast.error("Select Artwork Excel file first");
     setImporting(true);
     try {
-      // Changed to 'artwork' to target the correct endpoint
       await AdminService.importData('artwork', file);
       toast.success("Gallery Registry Synced");
       setFile(null);
@@ -65,7 +64,6 @@ export const AdminArtworks = () => {
         </Link>
       </div>
 
-      {/* GALLERY SYNC ENGINE - Switched to Artworks */}
       <div className="bg-primary/5 border border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <div className="bg-primary/20 p-4 rounded-2xl text-primary">
@@ -115,11 +113,12 @@ export const AdminArtworks = () => {
         {filtered.map((art: any) => (
           <div key={art._id} className="bg-[#0f0f0f] rounded-[2.5rem] overflow-hidden border border-white/5 group hover:border-white/10 transition-all">
             <div className="h-56 bg-white/5 flex items-center justify-center overflow-hidden relative">
-             <img 
-  src={art.Cloudinary_Images?.[0] || art.Film_Image_URL} 
-  className="w-full h-full object-cover" 
-  alt="" 
-/>
+              {/* FIX: Use Cloudinary_Images[0] or Film_Image_URL fallback */}
+              <img 
+                src={art.Cloudinary_Images?.[0] || art.Film_Image_URL} 
+                className="w-full h-full object-cover" 
+                alt={art.Title_In_English} 
+              />
               <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 text-[9px] font-black uppercase text-primary tracking-widest">{art.Artwork_ID}</div>
             </div>
             <div className="p-8">
