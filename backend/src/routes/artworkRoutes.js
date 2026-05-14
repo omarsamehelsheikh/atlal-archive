@@ -1,7 +1,9 @@
+const multer = require('multer'); // <--- Add this line!
 const express = require('express');
 const router = express.Router();
 const ArtworkController = require('../controllers/ArtworkController');
-const upload = multer(); // Store file in memory buffer
+
+const upload = multer();
 
 // GET /api/artworks (All pieces)
 router.get('/', (req, res) => ArtworkController.getAll(req, res));
