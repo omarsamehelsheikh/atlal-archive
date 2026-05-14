@@ -5,7 +5,6 @@ node_modules/
 
 # --- BUILD OUTPUTS ---
 dist/
-build/
 out/
 .next/
 bin/

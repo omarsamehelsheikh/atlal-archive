@@ -190,7 +190,7 @@ const Library: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get("http://54.174.102.52:5000/api/books")
+      .get("/api/books")
       .then((res) => {
         const rawData = res.data.data || res.data || [];
         const normalized = rawData.map((b: any, i: number) => {

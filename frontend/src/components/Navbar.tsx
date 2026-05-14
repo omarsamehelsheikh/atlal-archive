@@ -102,7 +102,7 @@ const Navbar: React.FC = () => {
 
                     color: language === "AR" ? "#fff" : "#000",
 
-                    fontFamily: "PP Neue Montreal",
+                    fontFamily: "TWK Lausanne",
                   }}
                 >
                   {language === "ENG" ? "SEARCH" : "بحث"}
@@ -131,7 +131,7 @@ const Navbar: React.FC = () => {
               >
                 <span
                   style={{
-                    fontFamily: "PP Neue Montreal",
+                    fontFamily: "TWK Lausanne",
 
                     fontSize: "18px",
 
@@ -181,7 +181,7 @@ const Navbar: React.FC = () => {
                       background:
                         language === "ENG" ? "#8A38F5" : "transparent",
 
-                      fontFamily: "PP Neue Montreal",
+                      fontFamily: "TWK Lausanne",
 
                       fontWeight: 600,
                     }}
@@ -198,7 +198,7 @@ const Navbar: React.FC = () => {
 
                       background: language === "AR" ? "#8A38F5" : "transparent",
 
-                      fontFamily: "PP Neue Montreal",
+                      fontFamily: "TWK Lausanne",
 
                       fontWeight: 600,
                     }}
@@ -482,7 +482,7 @@ const styles: Record<string, React.CSSProperties> = {
     textDecoration: "none",
     fontSize: "24px",
     fontWeight: "500",
-    fontFamily: "PP Neue Montreal",
+    fontFamily: "TWK Lausanne",
   },
 
   dropdown: {
@@ -546,7 +546,7 @@ const styles: Record<string, React.CSSProperties> = {
  innerNavLink: {
   textDecoration: "none",
 
-  fontFamily: "PP Neue Montreal",
+  fontFamily: "TWK Lausanne",
 
   fontWeight: 500,
 
