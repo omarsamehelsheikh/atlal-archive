@@ -115,7 +115,11 @@ export const AdminArtworks = () => {
         {filtered.map((art: any) => (
           <div key={art._id} className="bg-[#0f0f0f] rounded-[2.5rem] overflow-hidden border border-white/5 group hover:border-white/10 transition-all">
             <div className="h-56 bg-white/5 flex items-center justify-center overflow-hidden relative">
-              <img src={art.Cloudinary_Image_URL || art.Film_Image_URL} className="w-full h-full object-cover" alt="" />
+             <img 
+  src={art.Cloudinary_Images?.[0] || art.Film_Image_URL} 
+  className="w-full h-full object-cover" 
+  alt="" 
+/>
               <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 text-[9px] font-black uppercase text-primary tracking-widest">{art.Artwork_ID}</div>
             </div>
             <div className="p-8">
