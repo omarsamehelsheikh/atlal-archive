@@ -1,11 +1,9 @@
 import axios from 'axios';
 
 // Your AWS Public IP Address
-const AWS_IP = '54.174.102.52';
-
+const AWS_IP = '44.223.1.165'; // Your new Public IP
 const API = axios.create({
-  // Pointing to your AWS EC2 instance on port 5000
-  baseURL: `http://${AWS_IP}:5000/api`,
+  baseURL: `http://${AWS_IP}:5050/api`,
 });
 
 /**
