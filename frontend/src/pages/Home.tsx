@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import axios from "axios";
+import API from "../services/api"; // 1. FIXED IMPORT
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -186,13 +186,16 @@ const Home: React.FC = () => {
   // FETCH ARTISTS
 
   useEffect(() => {
-    axios
-      .get("/artists")
-      .then((res) => {
-        const artistsData = res.data.data || [];
+    // 1. Switched to centralized API instance
+    API.get("/artists")
+      .then((res: any) => { // Added :any type
+        // 2. Support for both .data.data and .data response structures
+        const artistsData = res.data.data || res.data || [];
 
         const filteredArtists = artistsData.filter((artist: any) => {
+          // 3. Updated check to include the new Cloudinary_Images array
           const hasImage =
+            (artist.Cloudinary_Images && artist.Cloudinary_Images.length > 0) ||
             hasValidImage(artist.Cloudinary_Image1) ||
             hasValidImage(artist.Cloudinary_Image2) ||
             hasValidImage(artist.Cloudinary_Image3);
@@ -205,7 +208,7 @@ const Home: React.FC = () => {
 
         setArtists(filteredArtists);
       })
-      .catch((err) => console.error(err))
+      .catch((err: any) => console.error("Home load error:", err))
       .finally(() => setIsLoading(false));
   }, []);
 
