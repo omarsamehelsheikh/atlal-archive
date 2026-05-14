@@ -1,23 +1,23 @@
 import axios from 'axios';
 
-// Your AWS Public IP Address
-const AWS_IP = '44.223.1.165'; // Your new Public IP
+// Professional approach: 
+// On the server, it calls /api (proxied by Nginx)
+// Locally, it defaults to localhost
 const API = axios.create({
-  baseURL: `http://${AWS_IP}:5050/api`,
+  baseURL: process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api',
 });
 
-/**
- * Refined safeGet to return the expected object structure even on failure.
- */
 const safeGet = async (url: string) => {
   try {
     const response = await API.get(url);
     return response;
   } catch (error: any) {
     console.warn(`⚠️ API Error at ${url}:`, error.response?.data || error.message);
-    return { data: { success: false, data: [] } }; 
+    return { data: { success: false, data: [] } };
   }
 };
+
+// ... rest of your AdminService code ...
 
 export const AdminService = {
   // --- ARTISTS ---
