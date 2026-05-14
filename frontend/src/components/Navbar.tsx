@@ -111,6 +111,9 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* LANGUAGE */}
+            // ... rest of imports
+
+            {/* LANGUAGE */}
             <div
               style={{
                 position: "relative",
@@ -119,55 +122,34 @@ const Navbar: React.FC = () => {
               <div
                 style={{
                   ...styles.langToggle,
-
                   background: language === "AR" ? "#111" : "#fff",
-
                   border:
                     language === "AR" ? "1px solid #555" : "1px solid #000",
-
                   color: language === "AR" ? "#fff" : "#000",
+                  justifyContent: "center", // Centering text since icon is gone
                 }}
                 onClick={() => setShowDropdown(!showDropdown)}
               >
                 <span
                   style={{
                     fontFamily: "TWK Lausanne",
-
                     fontSize: "18px",
-
                     fontWeight: 600,
-
                     letterSpacing: "0.08em",
-
                     color: language === "AR" ? "#fff" : "#000",
                   }}
                 >
                   {language === "ENG" ? "ENG" : "AR"}
                 </span>
 
-                <div
-                  style={{
-                    ...styles.arrowIcon,
-
-                    border:
-                      language === "AR"
-                        ? "1.5px solid white"
-                        : "1.5px solid black",
-
-                    borderTop: "none",
-
-                    borderLeft: "none",
-                  }}
-                />
+                {/* REMOVED: arrowIcon div was here */}
               </div>
 
               {showDropdown && (
                 <div
                   style={{
                     ...styles.dropdown,
-
                     background: language === "AR" ? "#111" : "#fff",
-
                     border:
                       language === "AR" ? "1px solid #444" : "1px solid #ddd",
                   }}
@@ -175,14 +157,10 @@ const Navbar: React.FC = () => {
                   <div
                     style={{
                       ...styles.dropdownItem,
-
                       color: language === "AR" ? "#fff" : "#000",
-
                       background:
                         language === "ENG" ? "#8A38F5" : "transparent",
-
                       fontFamily: "TWK Lausanne",
-
                       fontWeight: 600,
                     }}
                     onClick={() => toggleLanguage("ENG")}
@@ -193,13 +171,9 @@ const Navbar: React.FC = () => {
                   <div
                     style={{
                       ...styles.dropdownItem,
-
                       color: language === "AR" ? "#fff" : "#000",
-
                       background: language === "AR" ? "#8A38F5" : "transparent",
-
                       fontFamily: "TWK Lausanne",
-
                       fontWeight: 600,
                     }}
                     onClick={() => toggleLanguage("AR")}
@@ -209,7 +183,8 @@ const Navbar: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+            </div>
+
 
           {/* LOGO */}
           <div style={styles.centerLogo}>

@@ -251,27 +251,25 @@ const Home: React.FC = () => {
 
   // POSITIONS
 
-  const generateScatteredPosition = (index: number) => {
-    const cols = 7;
+  // REPLACE your current generateScatteredPosition with this:
+const generateScatteredPosition = (index: number) => {
+  // Galaxy constants
+  const angleIncrement = index * 0.5; // Controls the "spiral" tightness
+  const radiusScaling = 45; // Controls how far apart the stars are
+  
+  // Create a spiral distribution
+  const radius = Math.sqrt(index) * radiusScaling;
+  const angle = index * 137.5; // The "Golden Angle" for perfect distribution
 
-    const col = index % cols;
+  // Center of the screen (approximate)
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2.5;
 
-    const row = Math.floor(index / cols);
-
-    const baseX = 50 + col * 170;
-
-    const baseY = 120 + row * 210;
-
-    const offsetX = (index * 31) % 28;
-
-    const offsetY = (index * 47) % 32;
-
-    return {
-      left: baseX + offsetX,
-      top: baseY + offsetY,
-    };
+  return {
+    left: centerX + radius * Math.cos((angle * Math.PI) / 180),
+    top: centerY + radius * Math.sin((angle * Math.PI) / 180),
   };
-
+};
   // GET IMAGE
 
   const getArtistImage = (artist: any) => {
@@ -390,27 +388,25 @@ const Home: React.FC = () => {
 
       {/* RANDOM */}
 
-      {!selectedArtist && sortMode === "random" && (
+     {!selectedArtist && sortMode === "random" && (
         <div
           style={{
             width: "100%",
-            minHeight: "100vh",
+            height: "100vh", // Galaxy fills the screen
             position: "relative",
-            paddingTop: "120px",
-            paddingBottom: "200px",
+            overflow: "hidden", // Prevents scrollbars during floating
           }}
         >
           <div
             style={{
               width: "100%",
+              height: "100%",
               position: "relative",
-              height: `${Math.ceil(artists.length / 7) * 220}px`,
             }}
           >
             {!isLoading &&
               artists.map((artist, index) => {
                 const size = getRandomSize(index);
-
                 const position = generateScatteredPosition(index);
 
                 return (
@@ -421,23 +417,23 @@ const Home: React.FC = () => {
                     onMouseLeave={() => setHoveredNode(null)}
                     style={{
                       position: "absolute",
-
-                      left: position.left + Math.sin(time + index) * 12,
-
-                      top: position.top + Math.cos(time + index * 1.5) * 10,
-
+                      // 1. Center coordinates from the spiral math
+                      left: position.left,
+                      top: position.top,
                       width: size.width,
-
                       height: size.height,
-
                       cursor: "pointer",
-
-                      transition: "0.35s ease",
-
+                      // 2. Make sure hovered item is always on top
+                      zIndex: hoveredNode?._id === artist._id ? 9999 : index,
+                      transition: "transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                      // 3. GALAXY MOTION (Circular drift + scale)
                       transform: `
-    translateY(${Math.sin(time * 2 + index) * 4}px)
-    scale(${hoveredNode?._id === artist._id ? 1.08 : 1})
-  `,
+                        translate(
+                          ${Math.cos(time * 0.3 + index) * 25}px, 
+                          ${Math.sin(time * 0.4 + index) * 25}px
+                        )
+                        scale(${hoveredNode?._id === artist._id ? 1.2 : 1})
+                      `,
                     }}
                   >
                     <img
@@ -448,14 +444,11 @@ const Home: React.FC = () => {
                         height: "100%",
                         objectFit: "cover",
                         display: "block",
-
                         boxShadow:
                           hoveredNode?._id === artist._id
-                            ? "0 0 35px rgba(123,63,242,0.7)"
+                            ? `0 0 35px ${accentColor}`
                             : "0 0 15px rgba(255,255,255,0.08)",
-
                         transition: "0.5s ease",
-
                         filter:
                           hoveredNode?._id === artist._id
                             ? "brightness(1.12)"
@@ -479,7 +472,8 @@ const Home: React.FC = () => {
             paddingBottom: 120,
             background: bgColor,
             color: textColor,
-            minHeight: "100vh",
+            // REPLACE Line 274:
+height: "100vh",
           }}
         >
           <div
