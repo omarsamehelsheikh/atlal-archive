@@ -133,13 +133,23 @@ const COUNTRIES = [
 
 const YEARS = ["1960s", "1970s", "1980s", "1990s", "2000s", "2010s", "2020s"];
 
-
+const BOOKS_LIST = [
+  "Diasporic Journeys",
+  "Book 02",
+  "Book 03",
+  "Book 04",
+  "Book 05",
+  "Book 06",
+  "Book 07",
+];
 
 const ARABIC_FILTER_LABELS: Record<string, string> = {
+  "SELECTED FILTERS:": "الفلاتر المختارة:",
   "THEME:": "الموضوع:",
   "MEDIUM:": "الوسيط:",
+  "BOOK:": "الكتاب:",
   "TAGS:": "الوسوم:",
-  "YEAR:": "السنة:", 
+  "YEAR:": "السنة:",
 };
 
 const ARABIC_THEMES: Record<string, string> = {
@@ -184,6 +194,7 @@ const FILTER_SECTIONS = [
   "SELECTED FILTERS:",
   "THEME:",
   "MEDIUM:",
+  "BOOK:",
   "TAGS:",
   "YEAR:",
 ];
@@ -260,18 +271,14 @@ const ArtworkDetail: React.FC<{
   isArabic,
 }) => {
   const [activeImg, setActiveImg] = useState(0);
-  const navigate = useNavigate();
+  const [zoomed, setZoomed] = useState(false);
 
-  const routerLocation = useLocation();
-
-  // Collect all images for this artwork (just Cloudinary for now, extendable)
   const images = [artwork.Cloudinary_Image_URL, artwork.Film_Image_URL].filter(
     Boolean,
   ) as string[];
 
   if (images.length === 0) images.push("/placeholder.png");
 
-  // Related: same artist or same section
   const related = allArtworks
     .filter(
       (a) =>
@@ -296,17 +303,17 @@ const ArtworkDetail: React.FC<{
   const CornerDots = ({ color = "#7B3FF2" }: { color?: string }) => (
     <>
       {[
-        { top: -4, left: -4 },
-        { top: -4, right: -4 },
-        { bottom: -4, left: -4 },
-        { bottom: -4, right: -4 },
+        { top: -3, left: -3 },
+        { top: -3, right: -3 },
+        { bottom: -3, left: -3 },
+        { bottom: -3, right: -3 },
       ].map((pos, i) => (
         <div
           key={i}
           style={{
             position: "absolute",
-            width: "8px",
-            height: "8px",
+            width: "4px",
+            height: "4px",
             background: color,
             zIndex: 5,
             ...pos,
@@ -364,7 +371,6 @@ const ArtworkDetail: React.FC<{
             overflowY: "auto",
           }}
         >
-          {/* Title block */}
           <div
             style={{
               background: "#000",
@@ -389,7 +395,6 @@ const ArtworkDetail: React.FC<{
             </div>
           </div>
 
-          {/* Artist + ID row */}
           <div
             style={{
               display: "flex",
@@ -401,33 +406,13 @@ const ArtworkDetail: React.FC<{
               fontSize: 12,
             }}
           >
-            <span
-              style={{
-                color: "#7B3FF2",
-                textDecoration: "underline",
-                letterSpacing: "0.08em",
-                cursor: "pointer",
-              }}
-            >
+            <span style={{ color: "#7B3FF2", letterSpacing: "0.08em" }}>
               {artwork.Artwork_ID ? `>AR${artwork.Artwork_ID}` : ">AR"}
             </span>
             <span
-              onClick={() => {
-                const foundArtist = artists.find(
-                  (artist) => artist.Full_Name === artwork.Artist_Name,
-                );
-
-                if (foundArtist) {
-                  setSelectedArtist(foundArtist);
-
-                  setSelectedArtwork(null);
-                }
-              }}
               style={{
-                textDecoration: "underline",
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                cursor: "pointer",
                 color: "#7B3FF2",
               }}
             >
@@ -438,7 +423,6 @@ const ArtworkDetail: React.FC<{
             </span>
           </div>
 
-          {/* Year + Location */}
           <div
             style={{
               display: "grid",
@@ -460,13 +444,11 @@ const ArtworkDetail: React.FC<{
             </div>
           </div>
 
-          {/* Type / Medium */}
           <div style={{ padding: "10px 20px", borderBottom: "1px solid #222" }}>
             <div style={labelStyle}>{isArabic ? "النوع:" : "TYPE:"}</div>
             <div style={valueStyle}>{artwork.Medium || "—"}</div>
           </div>
 
-          {/* Themes */}
           {themes.length > 0 && (
             <div
               style={{ padding: "10px 20px", borderBottom: "1px solid #222" }}
@@ -476,7 +458,6 @@ const ArtworkDetail: React.FC<{
             </div>
           )}
 
-          {/* Tags */}
           {tags.length > 0 && (
             <div
               style={{ padding: "10px 20px", borderBottom: "1px solid #222" }}
@@ -486,7 +467,6 @@ const ArtworkDetail: React.FC<{
             </div>
           )}
 
-          {/* Description */}
           <div style={{ padding: "10px 20px", borderBottom: "1px solid #222" }}>
             <div style={labelStyle}>{isArabic ? "الوصف:" : "DESCRIPTION:"}</div>
             <div
@@ -504,7 +484,6 @@ const ArtworkDetail: React.FC<{
             </div>
           </div>
 
-          {/* Dimensions */}
           {artwork.Artwork_Dimensions && (
             <div
               style={{ padding: "10px 20px", borderBottom: "1px solid #222" }}
@@ -516,7 +495,6 @@ const ArtworkDetail: React.FC<{
             </div>
           )}
 
-          {/* Collection / Series */}
           {(artwork.Series_ID || artwork.Section_Title) && (
             <div
               style={{ padding: "10px 20px", borderBottom: "1px solid #222" }}
@@ -530,7 +508,6 @@ const ArtworkDetail: React.FC<{
             </div>
           )}
 
-          {/* Related Items */}
           {related.length > 0 && (
             <div style={{ padding: "20px" }}>
               <div
@@ -561,6 +538,7 @@ const ArtworkDetail: React.FC<{
                       cursor: "pointer",
                       position: "relative",
                     }}
+                    onClick={() => setSelectedArtwork(rel)}
                   >
                     <CornerDots />
                     <div
@@ -616,7 +594,6 @@ const ArtworkDetail: React.FC<{
             </div>
           )}
 
-          {/* Footer */}
           <div
             style={{
               borderTop: "1px solid #222",
@@ -636,19 +613,42 @@ const ArtworkDetail: React.FC<{
           style={{
             display: "flex",
             flexDirection: "column",
-            padding: "32px",
-            gap: 16,
+            alignItems: "center",
+            justifyContent: "flex-start",
+            padding: "48px 32px 32px",
+            gap: 0,
           }}
         >
-          {/* Main image */}
-          <div style={{ position: "relative", flex: 1 }}>
-            <CornerDots />
+          <div style={{ position: "relative" }}>
+            {[
+              { top: -3, left: -3 },
+              { top: -3, right: -3 },
+              { bottom: -3, left: -3 },
+              { bottom: -3, right: -3 },
+            ].map((pos, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  width: 6,
+                  height: 6,
+                  background: "#7B3FF2",
+                  zIndex: 5,
+                  ...pos,
+                }}
+              />
+            ))}
+
             <div
               style={{
-                width: "100%",
+                width: "520px",
                 height: "520px",
-                overflow: "hidden",
                 border: "1px solid #222",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "8px",
+                boxSizing: "border-box",
               }}
             >
               <img
@@ -659,78 +659,91 @@ const ArtworkDetail: React.FC<{
                   height: "100%",
                   objectFit: "contain",
                   display: "block",
-                  background: "#f5f5f5",
                 }}
               />
             </div>
+          </div>
 
-            {/* Counter + nav */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 12,
-                fontFamily: "monospace",
-                fontSize: 12,
-              }}
-            >
-              <span style={{ opacity: 0.5 }}>
-                {activeImg + 1}/{images.length}
-              </span>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => setActiveImg((p) => Math.max(0, p - 1))}
-                  disabled={activeImg === 0}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background: activeImg === 0 ? "#eee" : "#111",
-                    color: activeImg === 0 ? "#999" : "#fff",
-                    border: "none",
-                    cursor: activeImg === 0 ? "default" : "pointer",
-                    fontSize: 16,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  ‹
-                </button>
-                <button
-                  onClick={() =>
-                    setActiveImg((p) => Math.min(images.length - 1, p + 1))
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "520px",
+              marginTop: 14,
+            }}
+          >
+            <span style={{ fontFamily: "monospace", fontSize: 13, opacity: 0.6 }}>
+              {activeImg + 1}/{images.length}
+            </span>
+
+            <div style={{ display: "flex", gap: 3 }}>
+              <button
+                onClick={() => setZoomed(true)}
+                title="Zoom image"
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: "#000",
+                  color: "#7B3FF2",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                ↗
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    const url = images[activeImg];
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = blobUrl;
+                    const ext = url.split(".").pop()?.split("?")[0] || "jpg";
+                    link.download = `${artwork.Title_In_English || "artwork"}.${ext}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(blobUrl);
+                  } catch (err) {
+                    console.error("Download failed", err);
                   }
-                  disabled={activeImg === images.length - 1}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background:
-                      activeImg === images.length - 1 ? "#eee" : "#111",
-                    color: activeImg === images.length - 1 ? "#999" : "#fff",
-                    border: "none",
-                    cursor:
-                      activeImg === images.length - 1 ? "default" : "pointer",
-                    fontSize: 16,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  ›
-                </button>
-              </div>
+                }}
+                title="Download"
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: "#000",
+                  color: "#7B3FF2",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                ↓
+              </button>
             </div>
           </div>
 
-          {/* Thumbnail strip */}
           {images.length > 1 && (
             <div
               style={{
                 display: "flex",
-                gap: 8,
-                overflowX: "auto",
-                paddingBottom: 4,
+                gap: 10,
+                marginTop: 16,
+                width: "520px",
+                justifyContent: "center",
+                flexWrap: "wrap",
               }}
             >
               {images.map((img, i) => (
@@ -738,13 +751,16 @@ const ArtworkDetail: React.FC<{
                   key={i}
                   onClick={() => setActiveImg(i)}
                   style={{
-                    width: 90,
-                    height: 65,
+                    width: 82,
+                    height: 82,
                     flexShrink: 0,
                     cursor: "pointer",
                     border:
-                      i === activeImg ? "2px solid #7B3FF2" : "1px solid #ddd",
+                      i === activeImg
+                        ? "2px solid #7B3FF2"
+                        : "1px solid #bbb",
                     overflow: "hidden",
+                    background: "#fff",
                   }}
                 >
                   <img
@@ -763,6 +779,51 @@ const ArtworkDetail: React.FC<{
           )}
         </div>
       </div>
+
+      {zoomed && (
+        <div
+          onClick={() => setZoomed(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.92)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "zoom-out",
+          }}
+        >
+          <button
+            onClick={() => setZoomed(false)}
+            style={{
+              position: "absolute",
+              top: 20,
+              right: 24,
+              background: "none",
+              border: "none",
+              color: "#fff",
+              fontSize: 36,
+              cursor: "pointer",
+              lineHeight: 1,
+            }}
+          >
+            ✕
+          </button>
+          <img
+            src={images[activeImg]}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              objectFit: "contain",
+              display: "block",
+              boxShadow: "0 0 60px rgba(0,0,0,0.8)",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -772,13 +833,13 @@ const Search: React.FC = () => {
   const { language } = useLanguage();
   const isArabic = language === "AR";
 
-const bgColor = isArabic ? "#000000" : "#FFFFFF";
+  const bgColor = isArabic ? "#000000" : "#FFFFFF";
   const textColor = isArabic ? "#F5F5F5" : "#111111";
   const borderColor = isArabic ? "#2A2A2A" : "#8f8f8f";
   const accentColor = isArabic ? "#A970FF" : "#7B3FF2";
   const cardBg = isArabic ? "#111111" : "#f7f7f7";
   const cardBorder = isArabic ? "#333333" : "#8f8f8f";
-  const filterBg = isArabic ? "#111111" : "#f3f2ef";
+  const filterBg = isArabic ? "#000000" : "#FFFFFF";
   const filterBorder = isArabic ? "#333333" : "#7c7c7c";
   const suggestedColor = isArabic ? "#888888" : "#666666";
 
@@ -791,11 +852,8 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
   );
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-
   const [expandedFilter, setExpandedFilter] = useState<string | null>(null);
-
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sortBy, setSortBy] = useState<"alphabetical" | "chronological">(
@@ -810,12 +868,9 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
     url !== "undefined";
 
   const getArtistImage = (artist: any) => {
-    if (hasValidImage(artist.Cloudinary_Image1))
-      return artist.Cloudinary_Image1;
-    if (hasValidImage(artist.Cloudinary_Image2))
-      return artist.Cloudinary_Image2;
-    if (hasValidImage(artist.Cloudinary_Image3))
-      return artist.Cloudinary_Image3;
+    if (hasValidImage(artist.Cloudinary_Image1)) return artist.Cloudinary_Image1;
+    if (hasValidImage(artist.Cloudinary_Image2)) return artist.Cloudinary_Image2;
+    if (hasValidImage(artist.Cloudinary_Image3)) return artist.Cloudinary_Image3;
     return "";
   };
 
@@ -887,17 +942,17 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
   const CornerDots = () => (
     <>
       {[
-        { top: -4, left: -4 },
-        { top: -4, right: -4 },
-        { bottom: -4, left: -4 },
-        { bottom: -4, right: -4 },
+        { top: -3, left: -3 },
+        { top: -3, right: -3 },
+        { bottom: -3, left: -3 },
+        { bottom: -3, right: -3 },
       ].map((pos, i) => (
         <div
           key={i}
           style={{
             position: "absolute",
-            width: "8px",
-            height: "8px",
+            width: "4px",
+            height: "4px",
             background: accentColor,
             zIndex: 5,
             ...pos,
@@ -1138,8 +1193,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                 }}
               >
                 {isArabic
-                  ? selectedArtist.Bio_In_Arabic ||
-                    selectedArtist.Bio_In_English
+                  ? selectedArtist.Bio_In_Arabic || selectedArtist.Bio_In_English
                   : selectedArtist.Bio_In_English}
               </div>
             </div>
@@ -1407,6 +1461,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                     display: "grid",
                     gridTemplateColumns: "repeat(3, 1fr)",
                     gap: "22px",
+                    alignItems: "start",
                   }}
                 >
                   {artists.map((artist) => (
@@ -1427,7 +1482,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                         <div
                           style={{
                             width: "100%",
-                            aspectRatio: "3/4",
+                            height: "320px",
                             overflow: "hidden",
                             background: isArabic ? "#222" : "#ddd",
                           }}
@@ -1516,6 +1571,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                     display: "grid",
                     gridTemplateColumns: "repeat(4, 1fr)",
                     gap: "22px",
+                    alignItems: "start",
                   }}
                 >
                   {books.map((book) => (
@@ -1532,7 +1588,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                         <div
                           style={{
                             width: "100%",
-                            aspectRatio: "3/4",
+                            height: "260px",
                             overflow: "hidden",
                             background: isArabic ? "#222" : "#ddd",
                           }}
@@ -1615,6 +1671,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                     display: "grid",
                     gridTemplateColumns: "repeat(3, 1fr)",
                     gap: "22px",
+                    alignItems: "start",
                   }}
                 >
                   {artworks.map((art) => (
@@ -1635,7 +1692,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                         <div
                           style={{
                             width: "100%",
-                            aspectRatio: "1/1",
+                            height: "280px",
                             overflow: "hidden",
                             background: isArabic ? "#222" : "#ddd",
                           }}
@@ -1692,7 +1749,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
         )}
       </div>
 
-      {/* Filter Panel */}
+      {/* ── Filter Panel ── */}
       <AnimatePresence>
         {showFilters && (
           <motion.div
@@ -1715,6 +1772,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
               color: textColor,
             }}
           >
+            {/* Corner dots */}
             {[
               { top: -4, left: -4 },
               { top: -4, right: -4 },
@@ -1733,6 +1791,8 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                 }}
               />
             ))}
+
+            {/* Header */}
             <div
               style={{
                 display: "flex",
@@ -1755,11 +1815,17 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                   border: "none",
                   fontSize: "28px",
                   cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
                 }}
               >
                 ✕
               </button>
             </div>
+
+            {/* Sort By — label has NO underline, only the text label itself */}
             <div
               style={{
                 padding: "14px 18px",
@@ -1768,9 +1834,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                 color: textColor,
               }}
             >
-              <div
-                style={{ marginBottom: "12px", textDecoration: "underline" }}
-              >
+              <div style={{ marginBottom: "12px", fontWeight: 700 }}>
                 {isArabic ? "ترتيب حسب:" : "SORT BY:"}
               </div>
               <div style={{ display: "flex", gap: "30px" }}>
@@ -1790,6 +1854,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                       setSortBy("alphabetical");
                       if (query) handleSearch(query);
                     }}
+                    style={{ accentColor: accentColor }}
                   />
                   {isArabic ? "أبجدي" : "ALPHABETICAL"}
                 </label>
@@ -1809,27 +1874,33 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                       setSortBy("chronological");
                       if (query) handleSearch(query);
                     }}
+                    style={{ accentColor: accentColor }}
                   />
                   {isArabic ? "زمني" : "CHRONOLOGICALLY"}
                 </label>
               </div>
             </div>
 
+            {/* Filter sections */}
             {FILTER_SECTIONS.map((section) => {
               const filterItems =
                 section === "THEME:"
                   ? THEMES
                   : section === "MEDIUM:"
                     ? MEDIUMS
-                    : section === "COUNTRY:"
-                      ? COUNTRIES
-                      : section === "COLOR:"
-                        ? COLORS
-                        : section === "YEAR:"
-                          ? YEARS
-                          : section === "TAGS:"
-                            ? SUGGESTED_TAGS
-                            : [];
+                    : section === "BOOK:"
+                      ? BOOKS_LIST
+                      : section === "COUNTRY:"
+                        ? COUNTRIES
+                        : section === "COLOR:"
+                          ? COLORS
+                          : section === "YEAR:"
+                            ? YEARS
+                            : section === "TAGS:"
+                              ? SUGGESTED_TAGS
+                              : [];
+
+              const isExpanded = expandedFilter === section;
 
               return (
                 <div
@@ -1838,9 +1909,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                 >
                   <div
                     onClick={() =>
-                      setExpandedFilter(
-                        expandedFilter === section ? null : section,
-                      )
+                      setExpandedFilter(isExpanded ? null : section)
                     }
                     style={{
                       padding: "18px",
@@ -1848,20 +1917,30 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                       justifyContent: "space-between",
                       alignItems: "center",
                       fontSize: "16px",
-                      textDecoration: "underline",
                       cursor: "pointer",
                       color: textColor,
                     }}
                   >
-                    {isArabic
-                      ? ARABIC_FILTER_LABELS[section] || section
-                      : section}
-                    <span style={{ fontSize: "34px", lineHeight: 0.7 }}>
-                      {expandedFilter === section ? "↑" : "↓"}
+                    {/* Label text with underline only on the text, not the arrow */}
+                    <span style={{ textDecoration: "underline" }}>
+                      {isArabic
+                        ? ARABIC_FILTER_LABELS[section] || section
+                        : section}
+                    </span>
+
+                    {/* Arrow changed from CSS triangle to ↓/↑ character */}
+                    <span
+                      style={{
+                        fontSize: "16px",
+                        flexShrink: 0,
+                        marginLeft: 8,
+                      }}
+                    >
+                      {isExpanded ? "↑" : "↓"}
                     </span>
                   </div>
 
-                  {expandedFilter === section && (
+                  {isExpanded && filterItems.length > 0 && (
                     <div
                       style={{
                         padding: "0 18px 18px",
@@ -1906,6 +1985,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
               );
             })}
 
+            {/* Footer */}
             <div
               style={{
                 padding: "18px",
@@ -1921,6 +2001,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                   setBooks([]);
                   setHasSearched(false);
                   setQuery("");
+                  setSelectedFilters([]);
                   setShowFilters(false);
                 }}
                 style={{
@@ -1930,6 +2011,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                   cursor: "pointer",
                   fontFamily: "monospace",
                   color: textColor,
+                  fontSize: "12px",
                 }}
               >
                 {isArabic ? "مسح الفلاتر" : "CLEAR FILTERS"}
@@ -1943,6 +2025,7 @@ const bgColor = isArabic ? "#000000" : "#FFFFFF";
                   cursor: "pointer",
                   fontFamily: "monospace",
                   color: textColor,
+                  fontSize: "12px",
                 }}
               >
                 {isArabic ? "عرض النتائج" : "VIEW RESULTS"}

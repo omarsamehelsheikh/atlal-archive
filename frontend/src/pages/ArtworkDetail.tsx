@@ -32,8 +32,6 @@ interface Artwork {
   Cloudinary_Image1: string;
   Cloudinary_Images?: string[]; // Synced array
 
-
-
   Cloudinary_Image2?: string;
 
   Cloudinary_Image3?: string;
@@ -67,14 +65,20 @@ const ArtworkDetail: React.FC = () => {
       .then(async (res: any) => {
         const artworkData = res.data.data;
         setArtwork(artworkData);
-        
+
         // Priority: Use the array from sync, fallback to Image1
-        const initialImg = artworkData.Cloudinary_Images?.[0] || artworkData.Cloudinary_Image1;
+        const initialImg =
+          artworkData.Cloudinary_Images?.[0] || artworkData.Cloudinary_Image1;
         setSelectedImage(initialImg);
 
         const allArtworksRes: any = await API.get("/artworks");
         const allArtworks = allArtworksRes.data.data || [];
-        const related = allArtworks.filter((a: any) => a.Artist === artworkData.Artist && a._id !== artworkData._id).slice(0, 2);
+        const related = allArtworks
+          .filter(
+            (a: any) =>
+              a.Artist === artworkData.Artist && a._id !== artworkData._id,
+          )
+          .slice(0, 2);
         setRelatedArtworks(related);
         setLoading(false);
       })
@@ -84,7 +88,10 @@ const ArtworkDetail: React.FC = () => {
       });
   }, [id]);
 
-  if (loading || !artwork) return <div style={{ padding: 200, textAlign: "center" }}>LOADING...</div>;
+  if (loading || !artwork)
+    return (
+      <div style={{ padding: 200, textAlign: "center" }}>LOADING...</div>
+    );
 
   // Group all images found
   const images = [
@@ -98,7 +105,18 @@ const ArtworkDetail: React.FC = () => {
   ].filter(Boolean);
 
   // Remove duplicates
-  const uniqueImages = Array.from(new Set(images));
+  const uniqueImages = Array.from(new Set(images)) as string[];
+
+  const currentIndex = uniqueImages.findIndex((img) => img === selectedImage);
+
+  const handlePrev = () => {
+    if (currentIndex > 0) setSelectedImage(uniqueImages[currentIndex - 1]);
+  };
+
+  const handleNext = () => {
+    if (currentIndex < uniqueImages.length - 1)
+      setSelectedImage(uniqueImages[currentIndex + 1]);
+  };
 
   return (
     <div
@@ -148,28 +166,23 @@ const ArtworkDetail: React.FC = () => {
             </div>
 
             <div
-             onClick={async () => {
-  try {
-    // 1. Use the FIXED instance (API), not raw axios
-    // 2. Remove the extra "/api" prefix
-    const res: any = await API.get("/artists");
-
-    // 3. Safely unpack
-    const artists = res.data.data || res.data || [];
-
-    const matchedArtist = artists.find(
-      (a: any) => a.Full_Name?.trim() === artwork.Artist?.trim()
-    );
-
-    if (matchedArtist) {
-      navigate("/search", {
-        state: { selectedArtist: matchedArtist },
-      });
-    }
-  } catch (err) {
-    console.error("Navigation error:", err);
-  }
-}}
+              onClick={async () => {
+                try {
+                  const res: any = await API.get("/artists");
+                  const artists = res.data.data || res.data || [];
+                  const matchedArtist = artists.find(
+                    (a: any) =>
+                      a.Full_Name?.trim() === artwork.Artist?.trim(),
+                  );
+                  if (matchedArtist) {
+                    navigate("/search", {
+                      state: { selectedArtist: matchedArtist },
+                    });
+                  }
+                } catch (err) {
+                  console.error("Navigation error:", err);
+                }
+              }}
               style={{
                 color: "#8B5CF6",
                 marginTop: 10,
@@ -200,21 +213,13 @@ const ArtworkDetail: React.FC = () => {
               <div
                 style={{
                   color: "#000",
-
                   fontFamily: '"Edition Numerical Unlicensed1"',
-
                   fontSize: "22px",
-
                   fontStyle: "normal",
-
                   fontWeight: 400,
-
                   lineHeight: "30.5px",
-
                   textDecorationLine: "underline",
-
                   textTransform: "uppercase",
-
                   marginBottom: "10px",
                 }}
               >
@@ -239,31 +244,18 @@ const ArtworkDetail: React.FC = () => {
               <div
                 style={{
                   color: "#000",
-
                   fontFamily: '"Edition Numerical Unlicensed1"',
-
                   fontSize: "22px",
-
                   fontStyle: "normal",
-
                   fontWeight: 400,
-
                   lineHeight: "30.5px",
-
                   textDecorationLine: "underline",
-
                   textDecorationStyle: "solid",
-
                   textDecorationSkipInk: "auto",
-
                   textDecorationThickness: "auto",
-
                   textUnderlineOffset: "auto",
-
                   textUnderlinePosition: "from-font",
-
                   textTransform: "uppercase",
-
                   marginBottom: "10px",
                 }}
               >
@@ -391,20 +383,32 @@ const ArtworkDetail: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             borderBottom: "1px solid #777",
+            padding: "32px 30px",
           }}
         >
-          {/* IMAGE AREA */}
-          <div
-            style={{
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              padding: "35px 30px 20px",
-              minHeight: "760px",
-            }}
-          >
-            {/* MAIN IMAGE */}
+          {/* MAIN IMAGE with corner bracket dots */}
+          <div style={{ position: "relative", alignSelf: "center" }}>
+            {/* Corner bracket dots — purple squares at each corner */}
+            {[
+              { top: -5, left: -5 },
+              { top: -5, right: -5 },
+              { bottom: -5, left: -5 },
+              { bottom: -5, right: -5 },
+            ].map((pos, i) => (
+              <div
+                key={i}
+                style={{
+                  position: "absolute",
+                  width: 10,
+                  height: 10,
+                  background: "#8B5CF6",
+                  zIndex: 5,
+                  ...pos,
+                }}
+              />
+            ))}
+
+            {/* Main image container */}
             <div
               style={{
                 width: "467px",
@@ -414,6 +418,7 @@ const ArtworkDetail: React.FC = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                overflow: "hidden",
               }}
             >
               <img
@@ -426,101 +431,152 @@ const ArtworkDetail: React.FC = () => {
                 }}
               />
             </div>
+          </div>
 
-            {/* IMAGE COUNT */}
+          {/* COUNTER ROW + NAV BUTTONS */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "467px",
+              alignSelf: "center",
+              marginTop: 12,
+            }}
+          >
+            {/* Image counter */}
             <div
               style={{
-                marginTop: "12px",
                 fontFamily: "Edition Numerical Unlicensed2",
                 fontSize: "18px",
                 color: "#000",
               }}
             >
-              {images.findIndex((img) => img === selectedImage) + 1}/
-              {images.length}
+              {currentIndex + 1}/{uniqueImages.length}
             </div>
 
-            {/* ACTIONS */}
-            <div
-              style={{
-                position: "absolute",
-                right: "35px",
-                bottom: "138px",
-                display: "flex",
-                gap: "6px",
-              }}
-            >
-              {/* DOWNLOAD */}
+            {/* Zoom + Download + Prev/Next nav buttons */}
+            <div style={{ display: "flex", gap: 0 }}>
+              {/* Zoom */}
               <div
-                onClick={() => {
-                  const link = document.createElement("a");
-
-                  link.href = selectedImage;
-
-                  link.download = artwork.Title || "artwork";
-
-                  document.body.appendChild(link);
-
-                  link.click();
-
-                  document.body.removeChild(link);
-                }}
+                onClick={() => window.open(selectedImage, "_blank")}
+                title="Zoom"
                 style={{
-                  width: "22px",
-                  height: "22px",
+                  width: 32,
+                  height: 32,
                   background: "#000",
                   color: "#8B5CF6",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
-                  fontSize: "14px",
+                  fontSize: 16,
                   border: "1px solid #000",
+                  userSelect: "none",
+                }}
+              >
+                ↗
+              </div>
+
+              {/* Download */}
+              <div
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = selectedImage;
+                  link.download = artwork.Title || "artwork";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                title="Download"
+                style={{
+                  width: 32,
+                  height: 32,
+                  background: "#000",
+                  color: "#8B5CF6",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  fontSize: 16,
+                  border: "1px solid #000",
+                  userSelect: "none",
+                  marginLeft: 2,
                 }}
               >
                 ↓
               </div>
 
-              {/* ZOOM */}
-              <div
-                onClick={() => window.open(selectedImage, "_blank")}
+              {/* Prev */}
+              <button
+                onClick={handlePrev}
+                disabled={currentIndex === 0}
                 style={{
-                  width: "22px",
-                  height: "22px",
-                  background: "#000",
-                  color: "#8B5CF6",
+                  width: 32,
+                  height: 32,
+                  background: currentIndex === 0 ? "#555" : "#000",
+                  color: "#fff",
+                  border: "none",
+                  cursor: currentIndex === 0 ? "default" : "pointer",
+                  fontSize: 18,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  border: "1px solid #000",
+                  marginLeft: 6,
                 }}
               >
-                ↗
-              </div>
-            </div>
+                ‹
+              </button>
 
-            {/* THUMBNAILS */}
+              {/* Next */}
+              <button
+                onClick={handleNext}
+                disabled={currentIndex === uniqueImages.length - 1}
+                style={{
+                  width: 32,
+                  height: 32,
+                  background:
+                    currentIndex === uniqueImages.length - 1 ? "#555" : "#000",
+                  color: "#fff",
+                  border: "none",
+                  cursor:
+                    currentIndex === uniqueImages.length - 1
+                      ? "default"
+                      : "pointer",
+                  fontSize: 18,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginLeft: 2,
+                }}
+              >
+                ›
+              </button>
+            </div>
+          </div>
+
+          {/* THUMBNAILS */}
+          {uniqueImages.length > 1 && (
             <div
               style={{
                 display: "flex",
-                gap: "12px",
-                marginTop: "26px",
-                width: "100%",
-                padding: "0 28px",
+                gap: "10px",
+                marginTop: "16px",
+                width: "467px",
+                alignSelf: "center",
                 overflowX: "auto",
                 boxSizing: "border-box",
               }}
             >
-              {images.map((img, index) => (
+              {uniqueImages.map((img, index) => (
                 <img
                   key={index}
                   src={img}
-                  onClick={() => setSelectedImage(img as string)}
+                  onClick={() => setSelectedImage(img)}
                   style={{
                     width: "82px",
                     height: "82px",
+                    flexShrink: 0,
                     objectFit: "cover",
                     cursor: "pointer",
                     border:
@@ -532,7 +588,7 @@ const ArtworkDetail: React.FC = () => {
                 />
               ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -550,77 +606,43 @@ const InfoSection = ({
     <div
       style={{
         borderBottom: "1px solid #777",
-
         padding: "10px 18px",
       }}
     >
       <div
-  style={{
-    color: "#000",
-
-    fontFamily:
-      '"Edition Numerical Unlicensed1"',
-
-    fontSize: "22px",
-
-    fontStyle: "normal",
-
-    fontWeight: 400,
-
-    lineHeight: "30.5px",
-
-    textDecorationLine:
-      "underline",
-
-    textDecorationStyle:
-      "solid",
-
-    textDecorationSkipInk:
-      "auto",
-
-    textDecorationThickness:
-      "auto",
-
-    textUnderlineOffset:
-      "auto",
-
-    textUnderlinePosition:
-      "from-font",
-
-    textTransform:
-      "uppercase",
-
-    marginBottom: "10px",
-  }}
->
-  {title}
-</div>
+        style={{
+          color: "#000",
+          fontFamily: '"Edition Numerical Unlicensed1"',
+          fontSize: "22px",
+          fontStyle: "normal",
+          fontWeight: 400,
+          lineHeight: "30.5px",
+          textDecorationLine: "underline",
+          textDecorationStyle: "solid",
+          textDecorationSkipInk: "auto",
+          textDecorationThickness: "auto",
+          textUnderlineOffset: "auto",
+          textUnderlinePosition: "from-font",
+          textTransform: "uppercase",
+          marginBottom: "10px",
+        }}
+      >
+        {title}
+      </div>
       <div
         style={{
           color: "#4A4A4A",
-
           fontFamily: '"TWK Lausanne"',
-
           fontSize: "12px",
-
           fontWeight: 400,
-
           lineHeight: "15px",
-
           letterSpacing: "1.2px",
-
           textTransform: "uppercase",
-
           whiteSpace: "pre-wrap",
-
           imageRendering: "pixelated",
-
           WebkitFontSmoothing: "none",
-
           MozOsxFontSmoothing: "grayscale",
-
           textRendering: "geometricPrecision",
-
           wordBreak: "break-word",
         }}
       >
@@ -629,4 +651,5 @@ const InfoSection = ({
     </div>
   );
 };
+
 export default ArtworkDetail;

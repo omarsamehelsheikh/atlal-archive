@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import API from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,19 +25,25 @@ const BOOK_AUTHORS_AR = [
   "حنين فؤاد",
   "نانسي أشرف",
   "سهيلة حجازي",
-  "فاطمة الجمالي",
+  "فاطمة الحمالي",
   "فرح وليد",
-  "عمر هنورة",
+  "عمر حنورة",
   "محمد الكحكي",
   "سلمي عبدالعظيم",
-  "سلمي عمادالدين",
-  "سامية داهر",
+  "سلمي عماد الدين",
+  "سامية ضاهر",
   "عمار صقر",
   "رولا أيمن",
   "سلمي السيد",
 ];
-const SUPERVISORS_AR = ["ديما طنير", "ميار عبدالله"];
+const SUPERVISORS_AR = ["ديما تنير", "ميار عبدالله"];
 
+// Horizontal positions are IDENTICAL to the original.
+// Vertical positions recalculated for equal 60px gaps between cards:
+//   Row 1 → top: 80px
+//   Row 2 → top: 80 + 380 + 60 = 520px
+//   Row 3 → top: 520 + 380 + 60 = 960px
+// Section height: 960 + 380 + 60 = 1400px
 const CARDS = [
   {
     id: "about",
@@ -48,8 +54,7 @@ const CARDS = [
     textAR:
       "أطلال هو مشروع مفتوح يضم الفنانين العرب وفناني جنوب غرب آسيا وشمال أفريقيا في المهجر وممارساتهم الفنية من خلال النشر الورقي الرقمي وقاعدة بيانات رقمية.",
     dark: false,
-    // We store positions as raw values to manipulate them
-    pos: { x: "4%", top: "150px" },
+    pos: { x: "4%", top: "80px" },         // was top:150px — moved to 80px
   },
   {
     id: "mission",
@@ -60,7 +65,7 @@ const CARDS = [
     textAR:
       "خلق مساحة تربط الفنانين العرب المعاصرين في المهجر بالجمهور العربي وجمهور جنوب غرب آسيا وشمال أفريقيا لتعزيز الحوار النقدي الصحي.",
     dark: true,
-    pos: { x: "35%", top: "500px" },
+    pos: { x: "35%", top: "520px" },       // horizontal 35% unchanged, was top:500px
   },
   {
     id: "vision",
@@ -71,7 +76,7 @@ const CARDS = [
     textAR:
       "أن يكون الجمهور العربي وجمهور جنوب غرب آسيا وشمال أفريقيا أكثر معرفة بالفنانين العرب في المهجر وممارساتهم الفنية.",
     dark: true,
-    pos: { x: "6%", top: "900px" },
+    pos: { x: "6%", top: "960px" },        // horizontal 6% unchanged, was top:900px
   },
   {
     id: "values",
@@ -82,8 +87,7 @@ const CARDS = [
     textAR:
       "نحن نخوض حوارًا نقديًا حول منطقة جنوب غرب آسيا وشمال إفريقيا (سوانا) والهوية العربية، لا سيما في أوساط الشتات، ونعمل على تشجيع الحوارات الشاملة في مجال الفن المعاصر. ينصب تركيزنا على الأعمال الفنية نفسها، في حين تتحدى المنظور الاستعماري الأطر الغربية وتسلط الضوء على إسهامات الفنانين العرب وفناني منطقة سوانا، ولا سيما الكيفية التي تشكل بها تجارب الشتات أعمالهم وتصورات الجمهور عنها.",
     dark: false,
-    // Values was specifically on the right, so we handle it relatively
-    pos: { x: "right 4%", top: "900px" },
+    pos: { x: "right 4%", top: "960px" }, // right 4% unchanged, same row as Vision
   },
 ];
 
@@ -95,33 +99,41 @@ const About: React.FC = () => {
   const [bookPages, setBookPages] = useState<string[]>([]);
   const [isScrolledToCredits, setIsScrolledToCredits] = useState(false);
 
+  const creditsRef = useRef<HTMLDivElement>(null);
   const bgPath = "/image-background-for-about-page.png";
 
   useEffect(() => {
     API.get("/books")
       .then((res) => {
         const bookData = res.data.data?.[0] || res.data?.[0];
-        
-        // This covers both the old singular columns and the new array we synced
         const pages = [
-          ...(bookData?.Cloudinary_Images || []), // Check for the new array first
+          ...(bookData?.Cloudinary_Images || []),
           bookData?.Cloudinary_Image1,
           bookData?.Cloudinary_Image2,
           bookData?.Cloudinary_Image3,
         ].filter(Boolean);
-        
         setBookPages(pages);
       })
       .catch((err) => console.error("Error loading book pages:", err));
   }, []);
+
+  // Fade background out as soon as Book Authors section enters the viewport
+  useEffect(() => {
+    const el = creditsRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsScrolledToCredits(entry.isIntersecting),
+      { rootMargin: "0px 0px -10% 0px", threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const currentAuthors = isArabic ? BOOK_AUTHORS_AR : BOOK_AUTHORS;
   const currentSupervisors = isArabic ? SUPERVISORS_AR : SUPERVISORS;
 
-  const getScrollingBg = () => {
-  return isArabic
-    ? "#000000"
-    : "#ffffff";
-};
+  const getScrollingBg = () => (isArabic ? "#000000" : "#ffffff");
+
   return (
     <div
       style={{
@@ -158,20 +170,12 @@ const About: React.FC = () => {
             exit={{ opacity: 0 }}
             style={styles.overlay}
           >
-            <button
-              onClick={() => setIsBookOpen(false)}
-              style={styles.closeBtn}
-            >
+            <button onClick={() => setIsBookOpen(false)} style={styles.closeBtn}>
               CLOSE [X]
             </button>
             <div style={styles.pageScroll}>
               {bookPages.map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  style={styles.pageImg}
-                  alt={`Page ${i + 1}`}
-                />
+                <img key={i} src={src} style={styles.pageImg} alt={`Page ${i + 1}`} />
               ))}
             </div>
           </motion.div>
@@ -179,18 +183,15 @@ const About: React.FC = () => {
       </AnimatePresence>
 
       <div style={{ position: "relative", zIndex: 1 }}>
+        {/* Cards — original staggered shape, equal 60px vertical gaps between rows */}
         <section
-          style={{ position: "relative", width: "100%", height: "1450px" }}
+          style={{ position: "relative", width: "100%", height: "1400px" }}
           onDoubleClick={() => setIsBookOpen(true)}
         >
           {CARDS.map((card) => {
-            // Logic to flip position based on language
             const horizontalPos = card.pos.x.includes("right")
               ? {
-                  [isArabic ? "left" : "right"]: card.pos.x.replace(
-                    "right ",
-                    "",
-                  ),
+                  [isArabic ? "left" : "right"]: card.pos.x.replace("right ", ""),
                 }
               : { [isArabic ? "right" : "left"]: card.pos.x };
 
@@ -213,27 +214,19 @@ const About: React.FC = () => {
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
-                  transition: "left 0.6s ease, right 0.6s ease", // Smooth shift when language toggles
+                  transition: "left 0.6s ease, right 0.6s ease",
                 }}
               >
                 <h2
                   style={{
                     margin: 0,
-
                     marginBottom: 20,
-
                     color: card.dark ? "#FFF" : "var(--black, #000)",
-
                     fontFamily: '"Edition Numerical Unlicensed1"',
-
                     fontSize: "37px",
-
                     fontStyle: "normal",
-
                     fontWeight: 400,
-
                     lineHeight: "99px",
-
                     textTransform: "uppercase",
                   }}
                 >
@@ -242,17 +235,11 @@ const About: React.FC = () => {
                 <p
                   style={{
                     margin: 0,
-
                     color: card.dark ? "#FFF" : "var(--black, #000)",
-
                     fontFamily: "TWK Lausanne",
-
                     fontSize: "20px",
-
                     fontStyle: "normal",
-
                     fontWeight: 200,
-
                     lineHeight: "28px",
                   }}
                 >
@@ -263,9 +250,19 @@ const About: React.FC = () => {
           })}
         </section>
 
-        <section style={{ paddingBottom: 120 }}>
+        {/* Credits — bg fades out when this scrolls into view */}
+        <section ref={creditsRef} style={{ paddingBottom: 120 }}>
           <div style={{ ...styles.headerBar, background: "#000000" }}>
-            <h1 style={styles.headerTitle}>
+            <h1
+  style={{
+    ...styles.headerTitle,
+    fontFamily: isArabic
+      ? '"29LTIdris"'
+      : '"TWK Lausanne"',
+    textTransform: isArabic ? "none" : "uppercase",
+    direction: isArabic ? "rtl" : "ltr",
+  }}
+>
               {isArabic ? "مؤلفو الكتب" : "BOOK AUTHORS"}
             </h1>
           </div>
@@ -274,13 +271,21 @@ const About: React.FC = () => {
             {currentAuthors.map((author, index) => (
               <div
                 key={index}
-                style={{
-                  ...styles.listItem,
-                  color: isArabic ? "#ffffff" : "#222222",
-                  borderBottom: isArabic
-                    ? "1px solid #333333"
-                    : "1px solid #bcbcbc",
-                }}
+     style={{
+  ...styles.listItem,
+  color: isArabic ? "#ffffff" : "#222222",
+  borderBottom: isArabic
+    ? "1px solid #333333"
+    : "1px solid #bcbcbc",
+
+  fontFamily: isArabic
+    ? '"29LTIdris"'
+    : '"Edition Numerical Unlicensed"',
+
+  fontWeight: isArabic ? 300 : 400,
+  textTransform: isArabic ? "none" : "uppercase",
+  direction: isArabic ? "rtl" : "ltr",
+}}
               >
                 {author}
               </div>
@@ -288,7 +293,16 @@ const About: React.FC = () => {
           </div>
 
           <div style={{ ...styles.headerBar, background: "#000000" }}>
-            <h1 style={styles.headerTitle}>
+            <h1
+  style={{
+    ...styles.headerTitle,
+    fontFamily: isArabic
+      ? '"29LTIdris"'
+      : '"TWK Lausanne"',
+    textTransform: isArabic ? "none" : "uppercase",
+    direction: isArabic ? "rtl" : "ltr",
+  }}
+>
               {isArabic ? "إشراف" : "SUPERVISED BY"}
             </h1>
           </div>
@@ -297,13 +311,21 @@ const About: React.FC = () => {
             {currentSupervisors.map((name, index) => (
               <div
                 key={index}
-                style={{
-                  ...styles.listItem,
-                  color: isArabic ? "#ffffff" : "#222222",
-                  borderBottom: isArabic
-                    ? "1px solid #333333"
-                    : "1px solid #bcbcbc",
-                }}
+  style={{
+  ...styles.listItem,
+  color: isArabic ? "#ffffff" : "#222222",
+  borderBottom: isArabic
+    ? "1px solid #333333"
+    : "1px solid #bcbcbc",
+
+  fontFamily: isArabic
+    ? '"29LTIdris"'
+    : '"Edition Numerical Unlicensed"',
+
+  fontWeight: isArabic ? 300 : 400,
+  textTransform: isArabic ? "none" : "uppercase",
+  direction: isArabic ? "rtl" : "ltr",
+}}
               >
                 {name}
               </div>
@@ -319,53 +341,24 @@ const styles: Record<string, React.CSSProperties> = {
   headerBar: { width: "100%", padding: "22px 0", marginTop: "40px" },
   headerTitle: {
     color: "var(--Accent-color, #8A38F5)",
-
     textAlign: "center",
-
     fontFamily: '"TWK Lausanne"',
-
     fontSize: "55px",
-
     fontStyle: "normal",
-
     fontWeight: 600,
-
     lineHeight: "99px",
-
     textTransform: "uppercase",
-
     margin: 0,
   },
  listItem: {
-  color:
-    'var(--black, #000)',
-
-  textAlign:
-    'center',
-
-  fontFamily:
-    '"Edition Numerical Unlicensed"',
-
-  fontSize:
-    '37px',
-
-  fontStyle:
-    'normal',
-
-  fontWeight:
-    400,
-
-  lineHeight:
-    '99px',
-
-  textTransform:
-    'uppercase',
-
-  padding:
-    '18px 0',
-
-  transition:
-    'color 0.6s ease',
+  color: "var(--black, #000)",
+  textAlign: "center",
+  fontSize: "37px",
+  fontStyle: "normal",
+  fontWeight: 400,
+  lineHeight: "99px",
+  padding: "18px 0",
+  transition: "color 0.6s ease",
 },
   overlay: {
     position: "fixed",

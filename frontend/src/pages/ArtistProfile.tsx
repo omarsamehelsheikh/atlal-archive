@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import API from "../services/api"; // Updated import
+import API from "../services/api"; 
 import Navbar from "../components/Navbar";
 import { useLanguage } from "../context/LanguageContext";
+import { useNavigate } from "react-router-dom";
 
 const FONT = `'Edition Numerical Unlicensed'`;
+const ACCENT = "#8B5CF6";
 
 interface Artist {
   _id: string;
   Full_Name: string;
   Cloudinary_Image1: string;
-  Cloudinary_Images?: string[]; // Added array support
+  Cloudinary_Images?: string[]; 
   Birth_Year?: string;
   Current_City?: string;
   Email?: string;
@@ -28,176 +30,48 @@ interface Artwork {
   Cloudinary_Image1: string;
 }
 
-/* ── Purple corner bracket SVG overlay ── */
-const CornerBrackets: React.FC<{ size?: number }> = ({ size = 18 }) => {
-  const s = size;
-  const stroke = "#8B5CF6";
-  const sw = 2;
+/* ── ADJUSTMENT 1: Custom Purple Frame with Corner/Mid Points ── */
+const ArtistFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const pointSize = 8;
+  const pointStyle: React.CSSProperties = {
+    position: 'absolute',
+    width: `${pointSize}px`,
+    height: `${pointSize}px`,
+    background: ACCENT,
+    zIndex: 10,
+  };
+
   return (
-    <svg
+    <div
       style={{
-        position: "absolute",
-        inset: 0,
+        position: "relative",
         width: "100%",
         height: "100%",
-        pointerEvents: "none",
-        zIndex: 10,
+        border: `2px solid ${ACCENT}`,
+        padding: '12px',
+        boxSizing: 'border-box',
       }}
-      xmlns="http://www.w3.org/2000/svg"
     >
-      {/* top-left */}
-      <polyline
-        points={`${s},0 0,0 0,${s}`}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={sw}
-      />
-      {/* top-right */}
-      <polyline
-        points={`calc(100% - ${s}),0 100%,0 100%,${s}`}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={sw}
-        style={{ transform: "none" }}
-      />
-      {/* bottom-left */}
-      <polyline
-        points={`0,calc(100% - ${s}) 0,100% ${s},100%`}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={sw}
-      />
-      {/* bottom-right */}
-      <polyline
-        points={`calc(100% - ${s}),100% 100%,100% 100%,calc(100% - ${s})`}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={sw}
-      />
-    </svg>
+      {/* Corner Points */}
+      <div style={{ ...pointStyle, top: -4, left: -4 }} />
+      <div style={{ ...pointStyle, top: -4, right: -4 }} />
+      <div style={{ ...pointStyle, bottom: -4, left: -4 }} />
+      <div style={{ ...pointStyle, bottom: -4, right: -4 }} />
+
+      {/* Mid-Side Points */}
+      <div style={{ ...pointStyle, top: -4, left: '50%', transform: 'translateX(-50%)' }} />
+      <div style={{ ...pointStyle, bottom: -4, left: '50%', transform: 'translateX(-50%)' }} />
+      <div style={{ ...pointStyle, top: '50%', left: -4, transform: 'translateY(-50%)' }} />
+      <div style={{ ...pointStyle, top: '50%', right: -4, transform: 'translateY(-50%)' }} />
+
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        {children}
+      </div>
+    </div>
   );
 };
 
-/* Use absolute pixel corners instead — SVG % in polyline points doesn't work */
-const BracketOverlay: React.FC = () => {
-  const c = "#8B5CF6";
-  const len = 22;
-  const sw = 2.5;
-  return (
-    <svg
-      style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        zIndex: 10,
-        overflow: "visible",
-      }}
-      preserveAspectRatio="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* top-left */}
-      <line
-        x1={len}
-        y1={0}
-        x2={0}
-        y2={0}
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      <line
-        x1={0}
-        y1={0}
-        x2={0}
-        y2={len}
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* top-right */}
-      <line
-        x1="100%"
-        y1={0}
-        x2="100%"
-        y2={len}
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      <line
-        x1={`calc(100% - ${len}px)`}
-        y1={0}
-        x2="100%"
-        y2={0}
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* bottom-left */}
-      <line
-        x1={0}
-        y1={`calc(100% - ${len}px)`}
-        x2={0}
-        y2="100%"
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      <line
-        x1={0}
-        y1="100%"
-        x2={len}
-        y2="100%"
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* bottom-right */}
-      <line
-        x1="100%"
-        y1={`calc(100% - ${len}px)`}
-        x2="100%"
-        y2="100%"
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      <line
-        x1={`calc(100% - ${len}px)`}
-        y1="100%"
-        x2="100%"
-        y2="100%"
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* mid-left */}
-      <line
-        x1={0}
-        y1="50%"
-        x2={len / 2}
-        y2="50%"
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* mid-right */}
-      <line
-        x1="100%"
-        y1="50%"
-        x2={`calc(100% - ${len / 2}px)`}
-        y2="50%"
-        stroke={c}
-        strokeWidth={sw}
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-};
-
-/* ── Info row ── */
+/* ── Info row with weight 300 ── */
 const InfoRow: React.FC<{ label: string; value: string; isBio?: boolean }> = ({
   label,
   value,
@@ -218,6 +92,7 @@ const InfoRow: React.FC<{ label: string; value: string; isBio?: boolean }> = ({
         textDecoration: "underline",
         color: "#000",
         marginBottom: "8px",
+        fontWeight: 300, 
       }}
     >
       {label}
@@ -238,23 +113,19 @@ const InfoRow: React.FC<{ label: string; value: string; isBio?: boolean }> = ({
   </div>
 );
 
-/* ── Main ── */
+/* ── Main Artist Profile Component ── */
 const ArtistProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const isArabic = language === "AR";
   const [artist, setArtist] = useState<Artist | null>(null);
-  const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      API.get(`/artists/${id}`),
-      API.get(`/artworks?artist=${id}`),
-    ])
-      .then(([artistRes, artRes]: any) => { // Added types
-        setArtist(artistRes.data.data);
-        setArtworks(artRes.data.data || []);
+    API.get(`/artists/${id}`)
+      .then((res: any) => {
+        setArtist(res.data.data);
         setLoading(false);
       })
       .catch((err: any) => {
@@ -322,6 +193,7 @@ const ArtistProfile: React.FC = () => {
                 color: "#fff",
                 textTransform: "uppercase",
                 opacity: 0.85,
+                fontWeight: 300,
               }}
             >
               ATLAL_AR03_{artist.Full_Name.replace(/\s+/g, "_").toUpperCase()}
@@ -329,26 +201,27 @@ const ArtistProfile: React.FC = () => {
             </span>
           </div>
 
-          {/* ARTIST NAME HEADER */}
+          {/* ADJUSTMENT 2: Header Left Aligned - RAW TEXT (No Black Box) */}
           <div
             style={{
-              background: "#000",
-              padding: "14px 20px 18px",
+              padding: "30px 20px",
               borderBottom: "1px solid #777",
+              textAlign: "left", 
             }}
           >
             <div
               style={{
                 fontFamily: FONT,
-                fontSize: "38px",
-                color: "#fff",
+                fontSize: "42px",
+                color: "#000",
                 textTransform: "uppercase",
                 letterSpacing: "2px",
                 lineHeight: 1.1,
+                fontWeight: 400,
               }}
             >
-              <span style={{ color: "#8B5CF6" }}>&gt;AR20</span>
-              {artist.Full_Name.toUpperCase()}
+              <span style={{ color: ACCENT }}>&gt;AR20</span>
+              {" "}{artist.Full_Name.toUpperCase()}
             </div>
           </div>
 
@@ -378,15 +251,12 @@ const ArtistProfile: React.FC = () => {
 
           <InfoRow
             label={isArabic ? "المجال:" : "FIELDS:"}
-            value={artist.Fields || artist.Undergraduate_Degree || "—"}
+            value={artist.Fields || "—"}
           />
 
           <InfoRow
             label={isArabic ? "الممارسات الفنية:" : "ARTISTIC PRACTICES:"}
-            value={
-              artist.Artistic_Practices ||
-              "SCULPTURE, INSTALLATION ART, ARCHITECTURAL MODELLING,\nMEDIA MIXED MEDIA, SOUND"
-            }
+            value={artist.Artistic_Practices || "—"}
           />
 
           <InfoRow
@@ -395,7 +265,7 @@ const ArtistProfile: React.FC = () => {
           />
 
           <InfoRow
-            label={isArabic ? "السيرة الذاتية:" : "BIOGRAPGHY:"}
+            label={isArabic ? "السيرة الذاتية:" : "BIOGRAPHY:"}
             value={bio}
             isBio
           />
@@ -410,7 +280,7 @@ const ArtistProfile: React.FC = () => {
                 fontFamily: FONT,
                 fontSize: "12px",
                 letterSpacing: "1.2px",
-                color: "#8B5CF6",
+                color: ACCENT,
                 textDecoration: "underline",
                 marginTop: "6px",
                 cursor: "pointer",
@@ -421,7 +291,7 @@ const ArtistProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* ── RIGHT: PHOTO ── */}
+        {/* ── RIGHT: PHOTO WITH PURPLE FRAME ── */}
         <div
           style={{
             display: "flex",
@@ -439,87 +309,102 @@ const ArtistProfile: React.FC = () => {
               aspectRatio: "4/5",
             }}
           >
-            <img
-              src={artist.Cloudinary_Image1}
-              alt={artist.Full_Name}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display: "block",
-                border: "1px solid #aaa",
-              }}
-            />
-            <BracketOverlay />
+            <ArtistFrame>
+              <img
+                src={artist.Cloudinary_Image1}
+                alt={artist.Full_Name}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                  border: "1px solid #aaa",
+                }}
+              />
+            </ArtistFrame>
           </div>
         </div>
       </div>
 
       {/* ── APPEARANCES IN PUBLICATIONS ── */}
-     {/* ── APPEARANCES IN PUBLICATIONS ── */}
-<div
+      <div
+        style={{
+          borderTop: '1px solid #777',
+          padding: '50px 60px',
+          background: '#ECECEC',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: FONT,
+            fontSize: '36px',
+            color: ACCENT,
+            textTransform: 'uppercase',
+            letterSpacing: '3px',
+            textAlign: 'center',
+            marginBottom: '40px',
+            fontWeight: 300,
+          }}
+        >
+          {isArabic ? 'الظهور في المنشورات' : 'APPEARANCES IN PUBLICATIONS'}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: '16px',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div
+  key={n}
+  onClick={() => navigate(`/library?book=BOOK0${n}`)}
   style={{
-    borderTop: '1px solid #777',
-    padding: '50px 60px',
-    background: '#ECECEC',
+    cursor: "pointer",
+    transition: "transform 0.25s ease",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = "translateY(-6px)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = "translateY(0px)";
   }}
 >
-  <div
-    style={{
-      fontFamily: FONT,
-      fontSize: '36px',
-      color: '#8B5CF6',
-      textTransform: 'uppercase',
-      letterSpacing: '3px',
-      textAlign: 'center',
-      marginBottom: '40px',
-    }}
-  >
-    {isArabic ? 'الظهور في المنشورات' : 'APPEARANCES IN PUBLICATIONS'}
-  </div>
-
-  <div
-    style={{
-      display: 'flex',
-      gap: '16px',
-      justifyContent: 'center',
-      flexWrap: 'wrap',
-    }}
-  >
-    {[1, 2, 3, 4, 5, 6].map((n) => (
-      <div key={n}>
-        <img
-          src={`/book${n}.png`}
-          alt=""
-          style={{
-            width: '90px',
-            height: '130px',
-            objectFit: 'cover',
-            border: '1px solid #999',
-            display: 'block',
-            pointerEvents: 'none',
-          }}
-        />
+              <img
+                src={`/book${n}.png`}
+                alt=""
+                style={{
+                  width: '90px',
+                  height: '130px',
+                  objectFit: 'cover',
+                  border: '1px solid #999',
+                  display: 'block',
+                  pointerEvents: 'none',
+                }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
-    ))}
-  </div>
-</div>
-</div>
+    </div>
   );
 };
 
 const labelStyle: React.CSSProperties = {
-  fontFamily: `'Edition Numerical Unlicensed', 'Courier New', Courier, monospace`,
+  fontFamily: FONT,
   fontSize: "14px",
   letterSpacing: "1.5px",
   textTransform: "uppercase",
   textDecoration: "underline",
   color: "#000",
   marginBottom: "6px",
+  fontWeight: 300,
 };
 
 const valueStyle: React.CSSProperties = {
-  fontFamily: `'Edition Numerical Unlicensed', 'Courier New', Courier, monospace`,
+  fontFamily: FONT,
   fontSize: "12px",
   letterSpacing: "1.2px",
   textTransform: "uppercase",

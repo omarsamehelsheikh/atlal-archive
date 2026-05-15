@@ -1,15 +1,46 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import * as THREE from "three";
+import ForceGraph3D, { ForceGraphMethods } from "react-force-graph-3d";
 import API from "../services/api"; // 1. FIXED IMPORT
 import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 
 type SortOption = "random" | "alphabetical";
+
+// ─── Texture cache for galaxy nodes ──────────────────────────────────────────
+const textureCache: { [key: string]: THREE.Texture } = {};
+const loader = new THREE.TextureLoader();
+
+// ─── ArtistFrame Component ────────────────────────────────────────────────────
+// ─── Updated ArtistFrame (Clean Purple Border Only) ──────────────────────────
+const ArtistFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      {/* Border */}
+      <div
+        style={{
+          border: "2px solid #8B5CF6",
+          display: "inline-block",
+          position: "relative",
+          padding: "4px", // Optional: adds a tiny gap between border and image
+        }}
+      >
+        {children}
+      </div>
+      
+      {/* Mini square divs were removed from here */}
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Home: React.FC = () => {
   const { language } = useLanguage();
 
   const isArabic = language === "AR";
+  const navigate = useNavigate();
 
   const [artists, setArtists] = useState<any[]>([]);
   const [selectedArtist, setSelectedArtist] = useState<any | null>(null);
@@ -22,25 +53,9 @@ const Home: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const animationRef = useRef<number>();
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  const [time, setTime] = useState(0);
-
-  useEffect(() => {
-    const animate = () => {
-      setTime(Date.now() * 0.001);
-
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, []);
+  const fgRef = useRef<ForceGraphMethods>();
 
   // COLORS
 
@@ -234,42 +249,6 @@ const Home: React.FC = () => {
     return grouped;
   }, [artists, isArabic]);
 
-  // IMAGE SIZES
-
-  const getRandomSize = (index: number) => {
-    const variations = [
-      { width: 95, height: 130 },
-      { width: 115, height: 150 },
-      { width: 85, height: 85 },
-      { width: 80, height: 105 },
-      { width: 130, height: 170 },
-      { width: 100, height: 130 },
-    ];
-
-    return variations[index % variations.length];
-  };
-
-  // POSITIONS
-
-  // REPLACE your current generateScatteredPosition with this:
-const generateScatteredPosition = (index: number) => {
-  // Galaxy constants
-  const angleIncrement = index * 0.5; // Controls the "spiral" tightness
-  const radiusScaling = 45; // Controls how far apart the stars are
-  
-  // Create a spiral distribution
-  const radius = Math.sqrt(index) * radiusScaling;
-  const angle = index * 137.5; // The "Golden Angle" for perfect distribution
-
-  // Center of the screen (approximate)
-  const centerX = window.innerWidth / 2;
-  const centerY = window.innerHeight / 2.5;
-
-  return {
-    left: centerX + radius * Math.cos((angle * Math.PI) / 180),
-    top: centerY + radius * Math.sin((angle * Math.PI) / 180),
-  };
-};
   // GET IMAGE
 
   const getArtistImage = (artist: any) => {
@@ -288,6 +267,33 @@ const generateScatteredPosition = (index: number) => {
     return "";
   };
 
+  // ─── GALAXY: high-quality image nodes ──────────────────────────────────────
+  const getNodeObject = useCallback((node: any) => {
+    const imgUrl = node.Cloudinary_Image1 || "https://placehold.co/200";
+
+    if (!textureCache[imgUrl]) {
+      const tex = loader.load(imgUrl);
+      tex.minFilter = THREE.LinearFilter;
+      textureCache[imgUrl] = tex;
+    }
+
+    const material = new THREE.SpriteMaterial({
+      map: textureCache[imgUrl],
+      color: 0xffffff,
+    });
+
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(40, 40, 1);
+    return sprite;
+  }, []);
+
+  const graphData = useMemo(() => ({ nodes: artists, links: [] }), [artists]);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
+  // ───────────────────────────────────────────────────────────────────────────
+
   return (
     <div
       style={{
@@ -298,6 +304,7 @@ const generateScatteredPosition = (index: number) => {
         direction: isArabic ? "rtl" : "ltr",
         overflowX: "hidden",
       }}
+      onMouseMove={handleMouseMove}
     >
       {/* NAVBAR */}
 
@@ -386,79 +393,65 @@ const generateScatteredPosition = (index: number) => {
         </div>
       )}
 
-      {/* RANDOM */}
+      {/* GALAXY (replaces RANDOM grid) */}
 
-     {!selectedArtist && sortMode === "random" && (
+      {!selectedArtist && sortMode === "random" && (
         <div
           style={{
-            width: "100%",
-            height: "100vh", // Galaxy fills the screen
-            position: "relative",
-            overflow: "hidden", // Prevents scrollbars during floating
+            width: "100vw",
+            height: "100vh",
+            position: "fixed",
+            top: 0,
+            left: 0,
           }}
         >
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              position: "relative",
-            }}
-          >
-            {!isLoading &&
-              artists.map((artist, index) => {
-                const size = getRandomSize(index);
-                const position = generateScatteredPosition(index);
+          {/* ── Hover label (mouse-following, from small file) ── */}
+         {/* ── HOVER LABEL (NAME ONLY) ── */}
+          {hoveredNode && (
+            <div
+              style={{
+                position: "fixed",
+                zIndex: 10000,
+                pointerEvents: "none",
+                left: mousePos.x + 20,
+                top: mousePos.y + 20,
+                background: isArabic
+                  ? "rgba(15,15,15,0.97)"
+                  : "rgba(255,255,255,0.97)",
+                color: textColor,
+                border: `1px solid ${borderColor}`,
+                padding: "14px 20px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 600,
+                  fontFamily: '"Edition Numerical Unlicensed1"',
+                  textTransform: isArabic ? "none" : "uppercase",
+                  lineHeight: 1,
+                }}
+              >
+                {isArabic
+                  ? arabicArtistNames[hoveredNode.Full_Name?.trim()] ||
+                    hoveredNode.Full_Name
+                  : hoveredNode.Full_Name}
+              </div>
+            </div>
+          )}
 
-                return (
-                  <div
-                    key={artist._id || index}
-                    onClick={() => setSelectedArtist(artist)}
-                    onMouseEnter={() => setHoveredNode(artist)}
-                    onMouseLeave={() => setHoveredNode(null)}
-                    style={{
-                      position: "absolute",
-                      // 1. Center coordinates from the spiral math
-                      left: position.left,
-                      top: position.top,
-                      width: size.width,
-                      height: size.height,
-                      cursor: "pointer",
-                      // 2. Make sure hovered item is always on top
-                      zIndex: hoveredNode?._id === artist._id ? 9999 : index,
-                      transition: "transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)",
-                      // 3. GALAXY MOTION (Circular drift + scale)
-                      transform: `
-                        translate(
-                          ${Math.cos(time * 0.3 + index) * 25}px, 
-                          ${Math.sin(time * 0.4 + index) * 25}px
-                        )
-                        scale(${hoveredNode?._id === artist._id ? 1.2 : 1})
-                      `,
-                    }}
-                  >
-                    <img
-                      src={getArtistImage(artist)}
-                      alt={artist.Full_Name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                        boxShadow:
-                          hoveredNode?._id === artist._id
-                            ? `0 0 35px ${accentColor}`
-                            : "0 0 15px rgba(255,255,255,0.08)",
-                        transition: "0.5s ease",
-                        filter:
-                          hoveredNode?._id === artist._id
-                            ? "brightness(1.12)"
-                            : "brightness(0.92)",
-                      }}
-                    />
-                  </div>
-                );
-              })}
-          </div>
+          {!isLoading && (
+            <ForceGraph3D
+              ref={fgRef}
+              graphData={graphData}
+              backgroundColor={bgColor}
+              showNavInfo={false}
+              nodeThreeObject={getNodeObject}
+              enableNodeDrag={false}
+              onNodeHover={(node) => setHoveredNode(node)}
+              onNodeClick={(node: any) => setSelectedArtist(node)}
+            />
+          )}
         </div>
       )}
 
@@ -472,8 +465,7 @@ const generateScatteredPosition = (index: number) => {
             paddingBottom: 120,
             background: bgColor,
             color: textColor,
-            // REPLACE Line 274:
-height: "100vh",
+            height: "100vh",
           }}
         >
           <div
@@ -550,53 +542,6 @@ height: "100vh",
           </div>
         </div>
       )}
-
-      {/* HOVER */}
-
-      {hoveredNode && !selectedArtist && (
-  <div
-    style={{
-      position: "fixed",
-      bottom: 30,
-      left: isArabic ? "auto" : 30,
-      right: isArabic ? 30 : "auto",
-
-      background: isArabic
-        ? "rgba(15,15,15,0.97)"
-        : "rgba(255,255,255,0.97)",
-
-      color: textColor,
-
-      border: `1px solid ${borderColor}`,
-
-      padding: "18px 22px",
-
-      zIndex: 999999,
-    }}
-  >
-    <div
-      style={{
-        fontSize: 20,
-
-        fontWeight: 600,
-
-        fontFamily: '"Edition Numerical Unlicensed1"',
-
-        textTransform: isArabic
-          ? "none"
-          : "uppercase",
-      }}
-    >
-      {isArabic
-        ? arabicArtistNames[
-            hoveredNode.Full_Name?.trim()
-          ] || hoveredNode.Full_Name
-        : hoveredNode.Full_Name}
-    </div>
-  </div>
-)}
-
-      {/* DETAILS */}
 
       {/* DETAILS */}
 
@@ -683,12 +628,8 @@ height: "100vh",
                 justifyContent: "center",
               }}
             >
-              <div
-                style={{
-                  border: `1px solid ${borderColor}`,
-                  padding: 16,
-                }}
-              >
+              {/* 2. ArtistFrame wraps the selected artist image */}
+              <ArtistFrame>
                 <img
                   src={getArtistImage(selectedArtist)}
                   alt=""
@@ -699,7 +640,7 @@ height: "100vh",
                     display: "block",
                   }}
                 />
-              </div>
+              </ArtistFrame>
             </div>
 
             {/* RIGHT CONTENT */}
@@ -735,7 +676,7 @@ height: "100vh",
                 <span>{isArabic ? "أطلال" : ""}</span>
               </div>
 
-              {/* TITLE */}
+              {/* 3. TITLE — left-aligned raw text with >AR20 prefix in purple */}
 
               <div
                 style={{
@@ -743,42 +684,41 @@ height: "100vh",
                   padding: "10px 16px",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: 24,
+                  justifyContent: "flex-start",
+                  gap: 12,
                   background: isArabic ? "#000" : "#fff",
                   color: isArabic ? "#fff" : "#000",
                 }}
               >
-                {/* <div
+                <span
                   style={{
-                    fontSize: 58,
+                    color: "#8B5CF6",
+                    fontSize: 42,
+                    fontFamily: '"Edition Numerical Unlicensed"',
+                    fontWeight: 400,
                     lineHeight: 1,
-                    color: accentColor,
-                    fontFamily: "OT Neue Montreal",
                   }}
                 >
-                  {isArabic ? "٢٠" : ">AR20"}
-                </div> */}
-                <div
+                  {isArabic ? "٢٠&gt;" : ">AR20"}
+                </span>
+
+                <span
                   style={{
-                    fontSize: 34,
+                    fontSize: 42,
                     fontFamily: '"Edition Numerical Unlicensed"',
-                    fontWeight: 900,
-                    backgroundColor: isArabic ? "#FFFFFF" : "#000000",
-                    color: isArabic ? "#000000" : "#FFFFFF",
+                    fontWeight: 400,
                     textTransform: isArabic ? "none" : "uppercase",
-                    padding: "8px 14px",
-                    display: "inline-block",
+                    lineHeight: 1,
                   }}
                 >
                   {isArabic
                     ? arabicArtistNames[selectedArtist.Full_Name?.trim()] ||
                       selectedArtist.Full_Name
                     : selectedArtist.Full_Name}
-                </div>
+                </span>
               </div>
 
-              {/* ROWS */}
+              {/* ROWS — 4. subheader labels with fontWeight 300 and underline */}
 
               {[
                 [
@@ -829,7 +769,8 @@ height: "100vh",
                       fontSize: 16,
                       marginBottom: 10,
                       fontFamily: "Edition Numerical Unlicensed1",
-                      fontWeight: 700,
+                      fontWeight: 300,
+                      textDecoration: "underline",
                     }}
                   >
                     {item[0]}
@@ -861,7 +802,8 @@ height: "100vh",
                     fontSize: 16,
                     marginBottom: 12,
                     fontFamily: "Edition Numerical Unlicensed1",
-                    fontWeight: 700,
+                    fontWeight: 300,
+                    textDecoration: "underline",
                   }}
                 >
                   {isArabic ? "سيرة ذاتية" : "BIOGRAPHY:"}
@@ -894,7 +836,8 @@ height: "100vh",
                     fontSize: 16,
                     marginBottom: 12,
                     fontFamily: "Edition Numerical Unlicensed1",
-                    fontWeight: 700,
+                    fontWeight: 300,
+                    textDecoration: "underline",
                   }}
                 >
                   {isArabic ? "تواصل" : "CONTACT INFO:"}
@@ -944,19 +887,20 @@ height: "100vh",
           >
             {[
               {
-                image: "/book1.png",
-                title: isArabic ? "كتاب ١." : "BOOK 01",
-              },
-
-              {
-                image: "/book1.png",
-                title: isArabic ? "كتاب ٢." : "BOOK 02",
-              },
-
-              {
-                image: "/book3.png",
-                title: isArabic ? "كتاب ٣." : "BOOK 03",
-              },
+  image: "/book1.png",
+  title: isArabic ? "كتاب ١." : "BOOK 01",
+  id: "BOOK01",
+},
+{
+  image: "/book2.png",
+  title: isArabic ? "كتاب ٢." : "BOOK 02",
+  id: "BOOK02",
+},
+{
+  image: "/book3.png",
+  title: isArabic ? "كتاب ٣." : "BOOK 03",
+  id: "BOOK03",
+},
             ].map((book, index) => (
               <div
                 key={index}
@@ -964,14 +908,16 @@ height: "100vh",
                   textAlign: "center",
                 }}
               >
-                <img
-                  src={book.image}
-                  alt=""
-                  style={{
-                    width: 150,
-                    marginBottom: 20,
-                  }}
-                />
+               <img
+  src={book.image}
+  alt=""
+  onClick={() => navigate(`/library?book=${book.id}`)}
+  style={{
+    width: 150,
+    marginBottom: 20,
+    cursor: "pointer",
+  }}
+/>
 
                 <div
                   style={{
