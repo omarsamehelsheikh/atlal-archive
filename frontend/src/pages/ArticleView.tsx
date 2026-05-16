@@ -33,7 +33,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({
         position: "relative",
         width: "100%",
         minHeight: "100vh",
-        background: isArabic ? "#000" : "#f5f3ef",
+        background: isArabic ? "#000" : "#fff",
         color: isArabic ? "#fff" : "#111",
         direction: isArabic ? "rtl" : "ltr",
         paddingTop: "40px",
@@ -58,48 +58,32 @@ const ArticleView: React.FC<ArticleViewProps> = ({
         </button>
       </div>
 
-      {/* ─── COMPOSITE BANNER (Fits Screen Horizontally & No Cropping) ─── */}
+      {/* ─── COMPOSITE BANNER (No Image, No Background) ─── */}
       <div
         style={{
           position: "relative",
           width: "100%",
-          height: "auto", // Allows the container height to adapt natively to the full image aspect ratio
-          overflow: "hidden",
+          padding: "80px 40px 60px",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          background: "#111",
           marginBottom: "60px",
+          boxSizing: "border-box",
         }}
       >
-        <img
-          src="/article.jpg"
-          alt="Article Texture Canvas"
+        {/* CENTER ELEMENT: Purple Title & Author */}
+        <div
           style={{
-            width: "100%", // Forces horizontal fit across the screen boundaries
-            height: "auto", // Ensures aspect ratio is balanced natively without truncation or clipping
-            display: "block",
-            opacity: 0.5,
-            zIndex: 1,
-          }}
-        />
-
-        {/* CENTER ELEMENT: Purple Text Over Image Layer */}
-        <div 
-          style={{ 
-            position: "absolute", 
-            zIndex: 10, 
-            padding: "0 40px",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "100%"
+            zIndex: 10,
+            width: "100%",
+            marginBottom: "60px",
           }}
         >
           <h1
             style={{
-              color: "#8A38F5", 
+              color: "#8A38F5",
               fontFamily: "TWK Lausanne",
               fontSize: "clamp(36px, 6vw, 72px)",
               fontWeight: 800,
@@ -115,7 +99,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({
             style={{
               marginTop: "20px",
               fontFamily: "TWK Lausanne",
-              color: "#8A38F5", 
+              color: "#8A38F5",
               fontSize: "14px",
               letterSpacing: "3px",
               textTransform: "uppercase",
@@ -126,14 +110,10 @@ const ArticleView: React.FC<ArticleViewProps> = ({
           </p>
         </div>
 
-        {/* BOTTOM LEFT CORNER ELEMENT: Book ID and Name in White */}
+        {/* BOTTOM LEFT CORNER ELEMENT: Book ID and Name in Purple */}
         <div
           style={{
-            position: "absolute",
-            bottom: "30px",
-            left: isArabic ? "auto" : "40px",
-            right: isArabic ? "40px" : "auto",
-            zIndex: 10,
+            width: "100%",
             textAlign: isArabic ? "right" : "left",
           }}
         >
@@ -142,7 +122,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({
               fontSize: "12px",
               textTransform: "uppercase",
               letterSpacing: "3px",
-              color: "#fff", 
+              color: "#8A38F5",
               fontWeight: 700,
               marginBottom: "4px",
               fontFamily: "TWK Lausanne",
@@ -155,7 +135,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({
               fontSize: "20px",
               fontFamily: "TWK Lausanne",
               fontWeight: 400,
-              color: "#fff", 
+              color: "#8A38F5",
               textTransform: "uppercase",
               letterSpacing: "1px",
             }}
@@ -169,7 +149,7 @@ const ArticleView: React.FC<ArticleViewProps> = ({
       <div
         style={{
           width: "100%",
-          paddingInline: "40px", 
+          paddingInline: "40px",
           fontSize: "16px",
           lineHeight: 1.95,
           color: isArabic ? "#eee" : "#222",

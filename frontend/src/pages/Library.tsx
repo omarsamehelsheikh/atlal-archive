@@ -96,7 +96,7 @@ const InfoCard: React.FC<InfoCardProps> = ({ book, isArabic, onReadMore, onClose
   );
 };
 
-/* ─── Spread Detail Card (same style as InfoCard, overlaid) ─── */
+/* ─── Spread Detail Card ─── */
 interface SpreadCardProps {
   book: any;
   spreadUrl: string;
@@ -156,18 +156,22 @@ const SpreadCard: React.FC<SpreadCardProps> = ({ book, spreadUrl, isArabic, x, y
         {title}
       </div>
 
-     <img
-  src={spreadUrl}
-  alt="spread"
-  onError={(e) => {
-    const target = e.target as HTMLImageElement;
-    const match = target.src.match(/spread(\d+)\.jpg$/);
-    if (match && !target.src.includes("/spread")) {
-      target.src = `/spread${match[1]}.jpg`;
-    }
-  }}
-  style={{ width: "100%", height: 130, objectFit: "cover", marginBottom: 10 }}
-/>
+      <img
+        src={spreadUrl}
+        alt="spread"
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          if (target.src.endsWith(".jpg")) {
+            target.src = target.src.replace(".jpg", ".jpeg");
+          } else if (target.src.endsWith(".jpeg")) {
+            target.src = target.src.replace(".jpeg", ".png");
+          } else {
+            const container = target.closest("[data-spread]") as HTMLElement;
+            if (container) container.style.display = "none";
+          }
+        }}
+        style={{ width: "100%", height: 130, objectFit: "cover", marginBottom: 10 }}
+      />
 
       <p style={{ fontSize: 11, color: isArabic ? "#bbb" : "#444", fontFamily: "TWK Lausanne", lineHeight: 1.6, margin: 0, marginBottom: 8,
         display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
@@ -222,13 +226,11 @@ const SpreadsPage: React.FC<SpreadsPageProps> = ({ book, isArabic, onBack, onRea
     hoverTimeout.current = setTimeout(() => setHoverCard(null), 200);
   };
 
-  // Click on spread goes straight to article
   const handleSpreadClick = () => {
     setHoverCard(null);
     onReadMore();
   };
 
-  // Layout: index 0 centered, 1-2 side by side, 3-4 side by side, 5-6 side by side, 7 centered
   const spreadRows: number[][] = [
     [0],
     [1, 2],
@@ -239,7 +241,6 @@ const SpreadsPage: React.FC<SpreadsPageProps> = ({ book, isArabic, onBack, onRea
 
   return (
     <div style={{ background: isArabic ? "#000" : "#fff", minHeight: "100vh", paddingTop: 110 }}>
-      {/* Header */}
       <div style={{ padding: "20px 60px 40px", direction: isArabic ? "rtl" : "ltr", borderBottom: isArabic ? "1px solid #222" : "1px solid #e0e0e0" }}>
         <button
           onClick={onBack}
@@ -256,7 +257,6 @@ const SpreadsPage: React.FC<SpreadsPageProps> = ({ book, isArabic, onBack, onRea
         </h1>
       </div>
 
-      {/* Spreads layout */}
       <div style={{ padding: "48px 60px 60px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
         {spreadRows.map((row, rowIdx) => (
           <div
@@ -274,24 +274,28 @@ const SpreadsPage: React.FC<SpreadsPageProps> = ({ book, isArabic, onBack, onRea
               return (
                 <div
                   key={spreadIndex}
+                  data-spread="true"
                   style={{ position: "relative", cursor: "pointer", flexShrink: 0 }}
                   onMouseEnter={(e) => handleSpreadMouseEnter(e, spreadIndex)}
                   onMouseLeave={handleSpreadMouseLeave}
                   onClick={handleSpreadClick}
                 >
                   <img
-  src={url}
-  alt={`spread ${spreadIndex + 1}`}
-  onError={(e) => {
-    const target = e.target as HTMLImageElement;
-    const match = target.src.match(/spread(\d+)\.jpg$/);
-    if (match && !target.src.includes("/spread")) {
-      target.src = `/spread${match[1]}.jpg`;
-    }
-  }}
-  style={{ width: 420, height: 300, objectFit: "cover", display: "block" }}
-/>
-                  {/* Blue border on hover */}
+                    src={url}
+                    alt={`spread ${spreadIndex + 1}`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target.src.endsWith(".jpg")) {
+                        target.src = target.src.replace(".jpg", ".jpeg");
+                      } else if (target.src.endsWith(".jpeg")) {
+                        target.src = target.src.replace(".jpeg", ".png");
+                      } else {
+                        const container = target.closest("[data-spread]") as HTMLElement;
+                        if (container) container.style.display = "none";
+                      }
+                    }}
+                    style={{ width: 420, height: 300, objectFit: "cover", display: "block" }}
+                  />
                   {hoveredIndex === spreadIndex && (
                     <div style={{
                       position: "absolute", inset: 0,
@@ -299,7 +303,6 @@ const SpreadsPage: React.FC<SpreadsPageProps> = ({ book, isArabic, onBack, onRea
                       pointerEvents: "none",
                     }} />
                   )}
-                  {/* Blue badge on hover */}
                   {hoveredIndex === spreadIndex && (
                     <div style={{
                       position: "absolute", bottom: 10, right: 10,
@@ -315,7 +318,6 @@ const SpreadsPage: React.FC<SpreadsPageProps> = ({ book, isArabic, onBack, onRea
         ))}
       </div>
 
-      {/* Spread hover card overlay */}
       <AnimatePresence>
         {hoverCard !== null && (
           <div
@@ -349,7 +351,6 @@ const Library: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [view, setView] = useState<"list" | "spreads" | "article">("list");
 
-  // Hover card state — no x/y needed, card is fixed to corner
   const [hoverCard, setHoverCard] = useState<{ book: any } | null>(null);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -363,8 +364,8 @@ const Library: React.FC = () => {
             const rawTitle = b.Book_Title || b.Title || "Untitled";
             const bookIndex = Number((b.Book_ID || "").replace(/\D/g, "")) || i + 1;
             const isFirstBook = i === 0 || rawTitle === "Diasporic Journeys";
-          const bookNum = i + 1;
-const spreads = Array.from({ length: 8 }, (_, idx) => `/book${bookNum}-spread${idx + 1}.jpg`);
+            const bookNum = Number((b.Book_ID || "").replace(/\D/g, "")) || i + 1;
+            const spreads = Array.from({ length: 8 }, (_, idx) => `/book${bookNum}-spread${idx + 1}.jpg`);
             return {
               _id: b._id,
               book_id: (b.Book_ID || `BOOK${String(bookIndex).padStart(2, "0")}`).replace(/\s/g, ""),
@@ -382,26 +383,24 @@ const spreads = Array.from({ length: 8 }, (_, idx) => `/book${bookNum}-spread${i
       })
       .finally(() => setIsLoading(false));
   }, []);
-useEffect(() => {
-  const params = new URLSearchParams(location.search);
-  const targetBook = params.get("book");
 
-  if (targetBook && books.length > 0) {
-    const foundBook = books.find(
-  (b) =>
-    b.book_id?.replace(/\s/g, "").toUpperCase() ===
-    targetBook?.replace(/\s/g, "").toUpperCase()
-);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const targetBook = params.get("book");
 
-    if (foundBook) {
-      setSelectedBook(foundBook);
-      setView("spreads");
+    if (targetBook && books.length > 0) {
+      const foundBook = books.find(
+        (b) =>
+          b.book_id?.replace(/\s/g, "").toUpperCase() ===
+          targetBook?.replace(/\s/g, "").toUpperCase()
+      );
+
+      if (foundBook) {
+        setSelectedBook(foundBook);
+        setView("spreads");
+      }
     }
-  }
-}, [location.search, books]);
-  
-
-
+  }, [location.search, books]);
 
   const selectedDisplay = selectedBook
     ? {
@@ -450,14 +449,12 @@ useEffect(() => {
             onReadMore={() => setView("article")}
           />
         ) : (
-          /* ── LIBRARY LIST VIEW ── */
           <div
             style={{
               marginTop: "110px",
               minHeight: "calc(100vh - 110px)",
             }}
           >
-            {/* Full-width book list */}
             <div
               style={{
                 ...styles.leftPanel,
@@ -498,7 +495,6 @@ useEffect(() => {
         )}
       </main>
 
-      {/* Hover info card — fixed to top-right corner */}
       <AnimatePresence>
         {hoverCard && view === "list" && (
           <div
