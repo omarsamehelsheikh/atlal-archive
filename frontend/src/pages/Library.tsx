@@ -156,11 +156,18 @@ const SpreadCard: React.FC<SpreadCardProps> = ({ book, spreadUrl, isArabic, x, y
         {title}
       </div>
 
-      <img
-        src={spreadUrl}
-        alt="spread"
-        style={{ width: "100%", height: 130, objectFit: "cover", marginBottom: 10 }}
-      />
+     <img
+  src={spreadUrl}
+  alt="spread"
+  onError={(e) => {
+    const target = e.target as HTMLImageElement;
+    const match = target.src.match(/spread(\d+)\.jpg$/);
+    if (match && !target.src.includes("/spread")) {
+      target.src = `/spread${match[1]}.jpg`;
+    }
+  }}
+  style={{ width: "100%", height: 130, objectFit: "cover", marginBottom: 10 }}
+/>
 
       <p style={{ fontSize: 11, color: isArabic ? "#bbb" : "#444", fontFamily: "TWK Lausanne", lineHeight: 1.6, margin: 0, marginBottom: 8,
         display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
@@ -273,10 +280,17 @@ const SpreadsPage: React.FC<SpreadsPageProps> = ({ book, isArabic, onBack, onRea
                   onClick={handleSpreadClick}
                 >
                   <img
-                    src={url}
-                    alt={`spread ${spreadIndex + 1}`}
-                    style={{ width: 420, height: 300, objectFit: "cover", display: "block" }}
-                  />
+  src={url}
+  alt={`spread ${spreadIndex + 1}`}
+  onError={(e) => {
+    const target = e.target as HTMLImageElement;
+    const match = target.src.match(/spread(\d+)\.jpg$/);
+    if (match && !target.src.includes("/spread")) {
+      target.src = `/spread${match[1]}.jpg`;
+    }
+  }}
+  style={{ width: 420, height: 300, objectFit: "cover", display: "block" }}
+/>
                   {/* Blue border on hover */}
                   {hoveredIndex === spreadIndex && (
                     <div style={{
@@ -349,7 +363,8 @@ const Library: React.FC = () => {
             const rawTitle = b.Book_Title || b.Title || "Untitled";
             const bookIndex = Number((b.Book_ID || "").replace(/\D/g, "")) || i + 1;
             const isFirstBook = i === 0 || rawTitle === "Diasporic Journeys";
-            const spreads = Array.from({ length: 8 }, (_, idx) => `/spread${idx + 1}.jpg`);
+          const bookNum = i + 1;
+const spreads = Array.from({ length: 8 }, (_, idx) => `/book${bookNum}-spread${idx + 1}.jpg`);
             return {
               _id: b._id,
               book_id: (b.Book_ID || `BOOK${String(bookIndex).padStart(2, "0")}`).replace(/\s/g, ""),

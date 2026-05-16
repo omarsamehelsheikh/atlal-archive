@@ -22,6 +22,11 @@ interface Artist {
   Artistic_Practices?: string;
   Artist_Code?: string;
   Fields?: string;
+  Full_Name_In_Arabic?: string;
+Current_City_In_Arabic?: string;
+Undergraduate_Degree_In_Arabic?: string;
+Artistic_Practices_In_Arabic?: string;
+Fields_In_Arabic?: string;
 }
 
 interface Artwork {
@@ -72,11 +77,12 @@ const ArtistFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 /* ── Info row with weight 300 ── */
-const InfoRow: React.FC<{ label: string; value: string; isBio?: boolean }> = ({
-  label,
-  value,
-  isBio,
-}) => (
+const InfoRow: React.FC<{
+  label: string;
+  value: string;
+  isBio?: boolean;
+  isArabic?: boolean;
+}> = ({ label, value, isBio, isArabic }) => (
   <div
     style={{
       borderBottom: "1px solid #777",
@@ -103,7 +109,7 @@ const InfoRow: React.FC<{ label: string; value: string; isBio?: boolean }> = ({
         fontSize: "12px",
         letterSpacing: "1.2px",
         lineHeight: isBio ? "20px" : "18px",
-        textTransform: "uppercase",
+        textTransform: isArabic ? "none" : "uppercase",
         color: "#4A4A4A",
         whiteSpace: "pre-wrap",
       }}
@@ -196,7 +202,14 @@ const ArtistProfile: React.FC = () => {
                 fontWeight: 300,
               }}
             >
-              ATLAL_AR03_{artist.Full_Name.replace(/\s+/g, "_").toUpperCase()}
+              ATLAL_AR03_{
+  (isArabic
+    ? artist.Full_Name_In_Arabic || artist.Full_Name
+    : artist.Full_Name
+  )
+    .replace(/\s+/g, "_")
+    .toUpperCase()
+}
               _IMAGE_1.JPG
             </span>
           </div>
@@ -221,7 +234,10 @@ const ArtistProfile: React.FC = () => {
               }}
             >
               <span style={{ color: ACCENT }}>&gt;AR20</span>
-              {" "}{artist.Full_Name.toUpperCase()}
+              {" "}
+{isArabic
+  ? artist.Full_Name_In_Arabic || artist.Full_Name
+  : artist.Full_Name.toUpperCase()}
             </div>
           </div>
 
@@ -245,26 +261,52 @@ const ArtistProfile: React.FC = () => {
               <div style={labelStyle}>
                 {isArabic ? "الإقامة:" : "BASED IN:"}
               </div>
-              <div style={valueStyle}>{artist.Current_City || "—"}</div>
+              <div style={valueStyle}>
+  {isArabic
+    ? artist.Current_City_In_Arabic ||
+      artist.Current_City ||
+      "—"
+    : artist.Current_City || "—"}
+</div>
             </div>
           </div>
 
           <InfoRow
+          isArabic={isArabic}
             label={isArabic ? "المجال:" : "FIELDS:"}
-            value={artist.Fields || "—"}
+            value={
+  isArabic
+    ? artist.Fields_In_Arabic || artist.Fields || "—"
+    : artist.Fields || "—"
+}
           />
 
           <InfoRow
+          isArabic={isArabic}
             label={isArabic ? "الممارسات الفنية:" : "ARTISTIC PRACTICES:"}
-            value={artist.Artistic_Practices || "—"}
+            value={
+  isArabic
+    ? artist.Artistic_Practices_In_Arabic ||
+      artist.Artistic_Practices ||
+      "—"
+    : artist.Artistic_Practices || "—"
+}
           />
 
           <InfoRow
+          isArabic={isArabic}
             label={isArabic ? "الدرجة العلمية:" : "DEGREE:"}
-            value={artist.Undergraduate_Degree || "—"}
+           value={
+  isArabic
+    ? artist.Undergraduate_Degree_In_Arabic ||
+      artist.Undergraduate_Degree ||
+      "—"
+    : artist.Undergraduate_Degree || "—"
+}
           />
 
           <InfoRow
+          isArabic={isArabic}
             label={isArabic ? "السيرة الذاتية:" : "BIOGRAPHY:"}
             value={bio}
             isBio

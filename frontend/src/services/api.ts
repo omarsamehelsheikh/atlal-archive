@@ -1,20 +1,20 @@
-import axios from 'axios';
-
-// Force the use of the relative proxy path for the server
-const API = axios.create({
-  baseURL: '/api', 
-});
-
 // import axios from 'axios';
 
-// // Detect if we are running locally (development) or on the server (production)
-// const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
+// // Force the use of the relative proxy path for the server
 // const API = axios.create({
-//   // If local, talk directly to the backend port 5000
-//   // If on AWS, use the relative /api path for Nginx
-//   baseURL: isLocal ? 'http://localhost:5000/api' : '/api',
+//   baseURL: '/api', 
 // });
+
+import axios from 'axios';
+
+// Detect if we are running locally (development) or on the server (production)
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+const API = axios.create({
+  // If local, talk directly to the backend port 5000
+  // If on AWS, use the relative /api path for Nginx
+  baseURL: isLocal ? 'http://localhost:5000/api' : '/api',
+});
 
 // ... keep the rest of the safeGet and AdminService code exactly as is
 
